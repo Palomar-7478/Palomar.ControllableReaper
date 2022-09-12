@@ -104,6 +104,7 @@ void function testthread (entity player) {
 
 
 
+
 //how to find animations: open the mdl containing the anims in a hex editor and search for the modelname (here its the superspectrecore one and the searchterm is sspec)
 //search for cat_or_not and playanim in the modding-chat channel in the northstar discrd for more details
 

@@ -249,6 +249,37 @@ void function ReaperClassesInit(){
             }
         }
 
+        function CreateSplashDamage(startpos , distancelimit) {
+            try {
+                vector startpos = expect vector (startpos)
+                vector distancelimit = startpos + expect vector (distancelimit) //should be smth like shootdirection*1000
+
+                vector traceend = TraceLine(startpos,distancelimit,expect entity (this.reaper), TRACE_MASK_SHOT, TRACE_COLLISION_GROUP_NONE).endPos
+
+                float distance = pow((pow(startpos.x - traceend.x,2))+(pow(startpos.y - traceend.y,2))+(pow(startpos.z - traceend.z,2)),0.5)
+                float waittime = distance /1000 //aproximate time of impact based on distance
+                wait waittime
+
+                entity ExplosionEnt = CreatePhysExplosion(traceend,200, PHYS_EXPLOSION_LARGE, 11 )
+                Explosion(
+                    traceend,
+                    expect entity (this.reaper.GetOwner()),
+                    ExplosionEnt,
+                    50, //pilot damage
+                    100, //titan damage
+                    200, //radius
+                    200, //radius (needs to be same)
+                    SF_ENVEXPLOSION_NOSOUND_FOR_ALLIES,
+                    traceend,
+                    100,
+                    damageTypes.explosive,
+                    eDamageSourceId.mp_weapon_epg,
+                    BALL_LIGHTNING_FX_TABLE) //its just an epmty effect i think , wich is good , because the epg already has an explosion effect
+                print(this.reaper.GetHealth())
+            }
+            catch(ex) {print(ex)}
+        }
+
 
         /////////////////////////////////////////////////////////////Movement//////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -408,9 +439,9 @@ void function ReaperClassesInit(){
                         guy.ReplaceActiveWeapon("mp_weapon_epg")
                         entity weapon = guy.GetMainWeapons()[0]
 
-                        //doulbes the damage
                         weapon.FireWeaponMissile(shootorigin ,shootvector, 1.0, damageTypes.largeCaliberExp, damageTypes.largeCaliberExp, true, PROJECTILE_NOT_PREDICTED )
-                        weapon.FireWeaponMissile(shootorigin ,shootvector, 1.0, damageTypes.largeCaliberExp, damageTypes.largeCaliberExp, true, PROJECTILE_NOT_PREDICTED )
+                        thread this.CreateSplashDamage(shootorigin,shootvector * 10000) //extremly dumb and jank way to add splash damage
+
 
                         guy.Destroy()
                         weapon.Destroy()
@@ -871,7 +902,7 @@ vector function FindNearestSafeExitPos(entity player, vector targetPos, int seve
 //todo:
 //find actual shooting anim
 //dont allow to embark titans when in reaper
-//make projectiles do splash damage & respect teams
+//make projectiles respect teams
 //add indicators (particularly for launching cooldown & health) , maybe with 1.10 server side rui
 //finish jumping ( make jumping have a circular shape (presti on discord sent me the formula)
 //fix launch impact damage , kinda unrelyable atm (maybe use FindVisibleEntitiesInCone with a cone that looks down)
@@ -887,3 +918,4 @@ vector function FindNearestSafeExitPos(entity player, vector targetPos, int seve
 //done: add warp in animation/effect //copied the code from the superspectre ai script
 //done: make a way to call in a reaper without the console //press melee and use to switch your next titanfall to be a reaper
 //done: prevent players from getting stuck in walls when exiting while their in walls //used FindNearestSafeExitPos from VoyageDB
+//done: make projectiles do splash damage //i made CreateSplashDamage() as a janky workaround
