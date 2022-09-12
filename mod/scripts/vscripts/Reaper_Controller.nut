@@ -30,21 +30,26 @@ void function SetUseInactive(entity player) {
 }
 
 void function SetCycleActive(entity player) {
+	PrevenWeaponCycle(player,player.GetActiveWeapon())
 	player.CycleActive = true
 	CheckForCombination(player)
 }
 
 void function SetCycleInactive(entity player) {
-	entity activeweaponbeforechange = player.GetActiveWeapon() //pretty lucky this executes before activeweapon changes
+	PrevenWeaponCycle(player,player.GetActiveWeapon())
 	player.CycleActive = false
+}
 
+void function PrevenWeaponCycle(entity player ,entity activeweaponbeforechange) {
 	if (player.UseActive == true ) { //prevents weapon change when you toggled reaper
 		foreach (index , wpn in player.GetMainWeapons()) {
 			if (wpn == activeweaponbeforechange) {
+				print("Weapon cycle prevented")
 				player.SetActiveWeaponBySlot( index )
 			}
 		}
 	}
+
 }
 
 void function CheckForCombination(entity player) {

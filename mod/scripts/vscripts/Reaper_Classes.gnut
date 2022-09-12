@@ -696,7 +696,7 @@ void function OnShootReleased( entity player ) {
 
 void function OnLaunchPressed ( entity player ) {
     if(player.ctrlreaper) {
-        if (player.ctrlreaper.launchstate == false && player.ctrlreaper.IsAlive && player.ctrlreaper.launchoncooldown == false) {
+        if (player.ctrlreaper.launchstate == false && player.ctrlreaper.IsAlive && player.ctrlreaper.launchoncooldown == false && !EntInSolid(player,player.GetOrigin())) {
             thread player.ctrlreaper.StartLaunchTracking ()
         }
     }
