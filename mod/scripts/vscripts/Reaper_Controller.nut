@@ -137,40 +137,8 @@ wait 2
 */
 
 
-<<<<<<< HEAD
-
-
-
-
-
-//    LaunchExternalWebBrowser( "youtube.com", WEBBROWSER_FLAG_FORCEEXTERNAL ) opens a browser lmao only client tho
-
-/*titan indicator
-
-vector origin =  GetViewTrace( player ).endPos
-float delay = 3
-player.EndSignal( "OnDestroy" )
-float endTime = Time() + delay
-
-for ( ;; )
-{
-	if ( !IsAlive( player ) )
-	{
-		player.WaitSignal( "OnRespawned" )
-		continue
-	}
-
-	float remainingTime = endTime - Time()
-	if ( remainingTime <= 0 )
-		return
-
-	player.SetHotDropImpactDelay( remainingTime )
-	Remote_CallFunction_Replay( player, "ServerCallback_ReplacementTitanSpawnpoint", origin.x, origin.y, origin.z, Time() + remainingTime )
-	player.WaitSignal( "OnDeath" )
-=======
 //    LaunchExternalWebBrowser( "youtube.com", WEBBROWSER_FLAG_FORCEEXTERNAL ) opens a browser lmao only client tho
 
 /*titan indicator
 	Remote_CallFunction_Replay( player, "ServerCallback_ReplacementTitanSpawnpoint", origin.x, origin.y, origin.z, Time() + remainingTime )
->>>>>>> bc24e36 (Reaper as Titan)
 }*/
