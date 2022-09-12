@@ -35,9 +35,15 @@ void function SetCycleActive(entity player) {
 }
 
 void function SetCycleInactive(entity player) {
+	entity activeweaponbeforechange = player.GetActiveWeapon() //pretty lucky this executes before activeweapon changes
 	player.CycleActive = false
+
 	if (player.UseActive == true ) { //prevents weapon change when you toggled reaper
-		player.SetActiveWeaponBySlot( 0 )
+		foreach (index , wpn in player.GetMainWeapons()) {
+			if (wpn == activeweaponbeforechange) {
+				player.SetActiveWeaponBySlot( index )
+			}
+		}
 	}
 }
 
@@ -81,7 +87,8 @@ bool function testfunc (entity player, array<string> args ) {
 }
 
 void function testthread (entity player) {
-	 PlayerEarnMeter_SetOwnedFrac( player, 1.0 )
+
+
 }
 
 
