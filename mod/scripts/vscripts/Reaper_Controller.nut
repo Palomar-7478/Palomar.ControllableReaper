@@ -2,20 +2,15 @@ untyped
 global function Reaper_Controller_Init
 
 void function Reaper_Controller_Init () {
-<<<<<<< HEAD
-=======
 	AddCallback_OnClientConnected( AddSelectInputs )
 	CPlayer.CycleActive <- false
 	CPlayer.UseActive <- false
 
->>>>>>> bc24e36 (Reaper as Titan)
     AddClientCommandCallback( "spawnreaper", spawnfunc )
     AddClientCommandCallback( "test", testfunc )
 	AddClientCommandCallback( "dummy", spawndummyfunc )
 }
 
-<<<<<<< HEAD
-=======
 void function AddSelectInputs(entity player) { //combination is kinda weird
 	AddButtonPressedPlayerInputCallback( player, IN_USE , SetUseActive )
 	AddButtonPressedPlayerInputCallback( player, IN_WEAPON_CYCLE, SetCycleActive )
@@ -61,7 +56,6 @@ void function CheckForCombination(entity player) {
 
 
 ///////////////////////////////////dev-functions///////////////////////////////////////////////
->>>>>>> bc24e36 (Reaper as Titan)
 bool function spawnfunc (entity player, array<string> args ) {
     SpawnReaperForPlayer( player )
 	return true
@@ -71,10 +65,6 @@ void function SpawnReaperForPlayer( entity player )
 {
 	TraceResults r = GetViewTrace( player )
     var s = CtrlReaper(r.endPos,player.GetAngles())
-<<<<<<< HEAD
-    //doesnt do shit ViewConeZero( player )
-=======
->>>>>>> bc24e36 (Reaper as Titan)
 }
 
 bool function spawndummyfunc (entity player, array<string> args ) {
@@ -91,56 +81,9 @@ bool function testfunc (entity player, array<string> args ) {
 }
 
 void function testthread (entity player) {
-<<<<<<< HEAD
-	entity reaper = CreatePropDynamic($"models/robots/super_spectre/super_spectre_v1.mdl",<0,0,0>,<0, 0, 0>,SOLID_VPHYSICS)
-	reaper.SetOrigin(GetViewTrace( player ).endPos)
-	reaper.SetAngles(player.GetAngles())
-	testanim(reaper)
-}
-
-void function testanim (entity ai) {
-
-	vector origin = ai.GetOrigin()
-	entity mover = CreateOwnedScriptMover( ai )
-	ai.SetParent( mover, "", false, 0 )
-	ai.Hide()
-
-	WaitFrame() // give AI time to hide before moving
-	ai.Anim_Play("sspec_speclaunch_fire")
-	ai.Anim_Stop()
-
-	vector warpPos = origin + < 0, 0, 1000 >
-	mover.SetOrigin( warpPos )
-
-
-	EmitSoundAtPosition( TEAM_UNASSIGNED, origin, "Titan_1P_Warpfall_Start" )
-
-	local e = {}
-	e.warpfx <- PlayFX( TURBO_WARP_FX, warpPos + < 0, 0, -104 >, mover.GetAngles() )
-	e.smokeFx <- null
-
-	wait 0.5
-
-	EmitSoundAtPosition( TEAM_UNASSIGNED, origin, "Titan_3P_Warpfall_WarpToLanding" )
-
-	wait 0.4
-
-	ai.Show()
-
-	e.smokeFx = PlayFXOnEntity( TURBO_WARP_COMPANY, ai, "", <0.0, 0.0, 152.0> )
-
-	local time = 0.2
-	mover.MoveTo( origin, time, 0, 0 )
-	wait time
-
-	e.smokeFx.Destroy()
-	PlayFX( $"droppod_impact", origin )
-}
-=======
 	 PlayerEarnMeter_SetOwnedFrac( player, 1.0 )
 }
 
->>>>>>> bc24e36 (Reaper as Titan)
 
 
 
