@@ -3,11 +3,8 @@ untyped
 global var CtrlReaper
 
 global function ReaperClassesInit
-<<<<<<< HEAD
-=======
 global function VectorDistanceBelowLimit
 global function EntInSolid
->>>>>>> bc24e36 (Reaper as Titan)
 
 global table<entity , var> ctrlreapers //track wich prop is for wich instance of a class
 
@@ -19,10 +16,7 @@ void function ReaperClassesInit(){
 
 
     CPlayer.ctrlreaper <- null //add a property to base player entity
-<<<<<<< HEAD
-=======
     CPlayer.EquipedReaperAsTitan <- false
->>>>>>> bc24e36 (Reaper as Titan)
 
     class CtrlReaper {
         //changing values
@@ -101,30 +95,6 @@ void function ReaperClassesInit(){
             vector warpPos = origin + < 0, 0, 1000 >
             this.mover.SetOrigin( warpPos )
 
-<<<<<<< HEAD
-
-            EmitSoundAtPosition( TEAM_UNASSIGNED, origin, "Titan_1P_Warpfall_Start" )
-
-            local e = {}
-            e.warpfx <- PlayFX( TURBO_WARP_FX, warpPos + < 0, 0, -104 >, expect vector (this.mover.GetAngles()) )
-            e.smokeFx <- null
-
-            wait 0.5
-
-            EmitSoundAtPosition( TEAM_UNASSIGNED, origin, "Titan_3P_Warpfall_WarpToLanding" )
-
-            wait 0.4
-
-            reaper.Show()
-
-            e.smokeFx = PlayFXOnEntity( TURBO_WARP_COMPANY, reaper, "", <0.0, 0.0, 152.0> )
-
-            local time = 0.2
-            this.mover.MoveTo( origin, time, 0, 0 )
-            wait time
-
-            e.smokeFx.Destroy()
-=======
             EmitSoundAtPosition( TEAM_UNASSIGNED, origin, "Titan_1P_Warpfall_Start" )
 
             PlayFX( TURBO_WARP_FX, warpPos + < 0, 0, -104 >, expect vector (this.mover.GetAngles()) )
@@ -138,7 +108,6 @@ void function ReaperClassesInit(){
             wait 0.2
 
             PlayFXOnEntity( TURBO_WARP_COMPANY, reaper, "", <0.0, 0.0, 152.0> )
->>>>>>> bc24e36 (Reaper as Titan)
             PlayFX( $"droppod_impact", origin )
         }
 
@@ -166,10 +135,6 @@ void function ReaperClassesInit(){
             SetTeam(expect entity (this.reaper), expect int (this.reaper.GetOwner().GetTeam()))
 
 
-<<<<<<< HEAD
-
-=======
->>>>>>> bc24e36 (Reaper as Titan)
             AddDeathCallback( "player", OnPilotDeath )
 
             //basically make player just a camera
@@ -200,19 +165,6 @@ void function ReaperClassesInit(){
             AddButtonPressedPlayerInputCallback( player, IN_ATTACK, OnShootPressed ) //shooting
             AddButtonReleasedPlayerInputCallback( player, IN_ATTACK, OnShootReleased) //stop shooting
 
-<<<<<<< HEAD
-            //AddButtonPressedPlayerInputCallback( player, IN_ZOOM , OnFreeViewPressed ) // freeview start
-            //AddButtonReleasedPlayerInputCallback( player, IN_ZOOM, OnFreeViewReleased ) // freeview end
-
-            AddButtonPressedPlayerInputCallback( player, IN_ZOOM_TOGGLE , OnLaunchPressed ) // freeview start alt button
-            AddButtonReleasedPlayerInputCallback( player, IN_ZOOM_TOGGLE, OnLaunchReleased ) // freeview end alt button
-
-
-
-
-            player.ctrlreaper = this
-
-=======
             AddButtonPressedPlayerInputCallback( player, IN_ZOOM ,  OnLaunchPressed ) //start launch
             AddButtonReleasedPlayerInputCallback( player, IN_ZOOM, OnLaunchReleased ) //launch
 
@@ -221,14 +173,10 @@ void function ReaperClassesInit(){
 
 
             player.ctrlreaper = this
->>>>>>> bc24e36 (Reaper as Titan)
         }
 
         function StopControl(player,shouldreenable) {
             try{
-<<<<<<< HEAD
-            entity player = expect entity (player)
-=======
 
             //place player slighly behind reaper & check for clipping
             entity player = expect entity (player)
@@ -238,7 +186,6 @@ void function ReaperClassesInit(){
             player.SetVelocity(<0,0,0>)
 
             //turn player from a camara into an actual player
->>>>>>> bc24e36 (Reaper as Titan)
 			player.ClearParent()
 			player.UnforceStand()
 			player.EnableWeaponViewModel()
@@ -246,10 +193,6 @@ void function ReaperClassesInit(){
             player.SetTakeDamageType( DAMAGE_YES )
 			player.kv.VisibilityFlags = ENTITY_VISIBLE_TO_EVERYONE
 
-<<<<<<< HEAD
-=======
-
->>>>>>> bc24e36 (Reaper as Titan)
             player.ctrlreaper = null
             this.reaper.SetOwner(null)
             SetTeam(expect entity (this.reaper),TEAM_UNASSIGNED)
@@ -264,25 +207,15 @@ void function ReaperClassesInit(){
             RemoveButtonPressedPlayerInputCallback( player, IN_JUMP, OnDashPressed )
             RemoveButtonPressedPlayerInputCallback( player, IN_ATTACK, OnShootPressed )
             RemoveButtonReleasedPlayerInputCallback( player, IN_ATTACK, OnShootReleased)
-<<<<<<< HEAD
-
-            //RemoveButtonPressedPlayerInputCallback( player, IN_ZOOM , OnFreeViewPressed )
-            //RemoveButtonReleasedPlayerInputCallback( player, IN_ZOOM, OnFreeViewReleased )
-=======
             RemoveButtonPressedPlayerInputCallback( player, IN_ZOOM , OnLaunchPressed )
             RemoveButtonReleasedPlayerInputCallback( player, IN_ZOOM,  OnLaunchReleased )
->>>>>>> bc24e36 (Reaper as Titan)
             RemoveButtonPressedPlayerInputCallback( player, IN_ZOOM_TOGGLE , OnLaunchPressed )
             RemoveButtonReleasedPlayerInputCallback( player, IN_ZOOM_TOGGLE,  OnLaunchReleased )
 
 
             RemoveDeathCallback( "player", OnPilotDeath )
 
-<<<<<<< HEAD
-            }catch(ex) {print("Couldn't strip controls!")}
-=======
             }catch(ex) {print(ex)}
->>>>>>> bc24e36 (Reaper as Titan)
 
         }
 
@@ -513,11 +446,7 @@ void function ReaperClassesInit(){
                 ViewConeFree(owner)
 
                 entity effect = PlayFX(  $"P_ar_titan_droppoint" , expect vector (this.reaper.GetOrigin()) ) //30 secs long
-<<<<<<< HEAD
-                EffectSetControlPointVector( effect, 1 , <89, 89, 89> ) //color //purple ( effect, 1 , < 61, 2, 57 > )
-=======
                 EffectSetControlPointVector( effect, 1 , <100,100,100> ) //color //purple ( effect, 1 , < 61, 2, 57 > )
->>>>>>> bc24e36 (Reaper as Titan)
 
                 entity effectmover = CreateExpensiveScriptMover( effect.GetOrigin(), effect.GetAngles() )
                 effect.SetParent( effectmover )
@@ -584,11 +513,7 @@ void function ReaperClassesInit(){
 
                     try {
                         this.reaper.SetHealth(this.reaper.GetHealth()+80)
-<<<<<<< HEAD
-                        Explosion_DamageDefSimple(damagedef_reaper_groundslam,targetpos,expect entity (this.reaper.GetOwner()),expect entity (this.reaper),targetpos)//this does 80 damage to reaper for some reason
-=======
                         Explosion_DamageDefSimple(damagedef_reaper_groundslam,targetpos ,expect entity (this.reaper.GetOwner()),expect entity (this.reaper),targetpos)//this does 80 damage to reaper for some reason
->>>>>>> bc24e36 (Reaper as Titan)
 
                     }catch(ex){}
 
@@ -901,8 +826,6 @@ bool function VectorDistanceBelowLimit (vector vector1 , vector vector2, float l
 
 }
 
-<<<<<<< HEAD
-=======
 vector function FindNearestSafeExitPos(entity player, vector targetPos, int severity) //this uses recursion I think
 {
     if(severity >= 1500)
@@ -942,7 +865,6 @@ vector function FindNearestSafeExitPos(entity player, vector targetPos, int seve
 
 
 
->>>>>>> bc24e36 (Reaper as Titan)
 
 
 
@@ -950,25 +872,13 @@ vector function FindNearestSafeExitPos(entity player, vector targetPos, int seve
 //find actual shooting anim
 //dont allow to embark titans when in reaper
 //make projectiles do splash damage & respect teams
-<<<<<<< HEAD
-//add cooldown indicators (particularly for launching & health) , maybe with 1.10 server side rui
-//finish jumping ( make jumping have a circular shape (presti on discord sent me the formula)
-=======
 //add indicators (particularly for launching cooldown & health) , maybe with 1.10 server side rui
 //finish jumping ( make jumping have a circular shape (presti on discord sent me the formula)
 //fix launch impact damage , kinda unrelyable atm (maybe use FindVisibleEntitiesInCone with a cone that looks down)
->>>>>>> bc24e36 (Reaper as Titan)
 
 
 
 
-<<<<<<< HEAD
-//done: make melee work better against grunts , maybe look into how titan melee works //still a bit janky but now works on multiple entities at once with entinviewcone func
-//done: make teams work so you cant kill a friendly reaper
-//done: make guns fire so the to shots meet at the exact enpos of your view insted of crossing at a fixed point //used VectorToAngles
-//done: added launch impact damage with explosiondefsimple (also used for explosion now)
-//done: add warp in animation/effect //copied the code from the superspectre ai script
-=======
 
 //done: make melee work better against grunts , maybe look into how titan melee works //still a bit janky but now works on multiple entities at once with FindVisibleEntitiesInCone func
 //done: make teams work so you cant kill a friendly reaper
@@ -977,4 +887,3 @@ vector function FindNearestSafeExitPos(entity player, vector targetPos, int seve
 //done: add warp in animation/effect //copied the code from the superspectre ai script
 //done: make a way to call in a reaper without the console //press melee and use to switch your next titanfall to be a reaper
 //done: prevent players from getting stuck in walls when exiting while their in walls //used FindNearestSafeExitPos from VoyageDB
->>>>>>> bc24e36 (Reaper as Titan)
