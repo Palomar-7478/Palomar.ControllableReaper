@@ -1,0 +1,980 @@
+untyped
+
+global var CtrlReaper
+
+global function ReaperClassesInit
+<<<<<<< HEAD
+=======
+global function VectorDistanceBelowLimit
+global function EntInSolid
+>>>>>>> bc24e36 (Reaper as Titan)
+
+global table<entity , var> ctrlreapers //track wich prop is for wich instance of a class
+
+///////////////////////////////////////////////////////////////////////////Class///////////////////////////////////////////////////////////////////////////////////////////////////////////
+void function ReaperClassesInit(){
+    PrecacheModel($"models/robots/super_spectre/super_spectre_v1.mdl")
+    PrecacheParticleSystem( $"P_sup_spectre_death" )
+    PrecacheParticleSystem( $"P_ar_titan_droppoint" )
+
+
+    CPlayer.ctrlreaper <- null //add a property to base player entity
+<<<<<<< HEAD
+=======
+    CPlayer.EquipedReaperAsTitan <- false
+>>>>>>> bc24e36 (Reaper as Titan)
+
+    class CtrlReaper {
+        //changing values
+        reaper = null //entity            |stores the prop
+        mover = null //entity             |the mover
+
+        IsAlive = true //bool             |after and during the explosion the reaper is dead
+
+        lasttrackedlaunchpos = null//v    |the last tracked position for the reaper launch
+        launchpostrackingstate = false//b |if reaper is currently in tracking mode
+        launchstate = false//b            |if reaper is currently launching (includes tracking phase)
+        reaperinlaunch = false //b        |if reaper is currently launching (doesnt includes tracking phase)
+
+        shootingstate = false //bool      |if reaper is currently shooting
+
+        dashoncooldown = false  //bool    |if dash is on cooldown
+        meleeoncooldown = false //bool    |if melee is on cooldown
+        shootoncooldown = false //bool    |if shooting is on cooldown (used to prevent spamming the shoot button)
+        launchoncooldown = false //bool   |if launching is on cooldown
+
+
+        allowanimation = false // bool    |if animation should be allowed (false , if the reaper isnt being controlled)
+        animsplaying = 0 //int            |stores how many animation are playing
+        idleanimstate = false //bool      |stores if the repear is currently in the idle animation
+        runanimstate = false //bool       |stores running state for animation
+
+        runsoundstate = false //bool      |if the run sound is playing
+
+        //consts
+        pilotingviewoffset = 16.0 //float |the amount the view-angle should be changed up(-) or down(+) relative to the reaper
+        reapermaxhealth = 1000 //int      |the reapers max health
+
+
+
+
+        constructor(var origin,var angles = <0,0,0>) {
+            //creater reaper prop
+            this.reaper = CreatePropDynamic($"models/robots/super_spectre/super_spectre_v1.mdl",<0,0,0>,<0, 0, 0>,SOLID_VPHYSICS)
+            this.reaper.SetOrigin( origin)
+            this.reaper.SetAngles( angles)
+            ctrlreapers[expect entity( this.reaper )] <- this
+
+
+            //create mover
+			vector reaperAngles = expect vector( this.reaper.EyeAngles() )
+			this.mover = CreateExpensiveScriptMover( expect vector (origin), <0, reaperAngles .y, reaperAngles .z> )
+            this.reaper.SetParent( this.mover )
+
+            //health
+            this.reaper.SetMaxHealth(this.reapermaxhealth)
+			this.reaper.SetHealth(this.reapermaxhealth)
+            AddEntityCallback_OnDamaged( expect entity( this.reaper ), OnReaperDamaged )
+
+            //use handling
+            AddCallback_OnUseEntity( expect entity( this.reaper ), OnReaperUsed)
+
+            thread this.ReaperWarpfall()
+
+            this.SetReaperFree()
+            thread this.HandleMoveInput()
+            thread this.PlayIdleAnim()
+            thread this.PlayRunAnim()
+        }
+
+        /////////////////////////////////////////////////////////////Functions//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        function ReaperWarpfall() { //this is coppied from superspectre code
+            entity reaper = expect entity (this.reaper)
+            vector origin = reaper.GetOrigin()
+            reaper.Hide()
+
+            WaitFrame() // give AI time to hide before moving
+            reaper.Anim_Play("sspec_speclaunch_fire")
+            reaper.Anim_Stop()
+
+            vector warpPos = origin + < 0, 0, 1000 >
+            this.mover.SetOrigin( warpPos )
+
+<<<<<<< HEAD
+
+            EmitSoundAtPosition( TEAM_UNASSIGNED, origin, "Titan_1P_Warpfall_Start" )
+
+            local e = {}
+            e.warpfx <- PlayFX( TURBO_WARP_FX, warpPos + < 0, 0, -104 >, expect vector (this.mover.GetAngles()) )
+            e.smokeFx <- null
+
+            wait 0.5
+
+            EmitSoundAtPosition( TEAM_UNASSIGNED, origin, "Titan_3P_Warpfall_WarpToLanding" )
+
+            wait 0.4
+
+            reaper.Show()
+
+            e.smokeFx = PlayFXOnEntity( TURBO_WARP_COMPANY, reaper, "", <0.0, 0.0, 152.0> )
+
+            local time = 0.2
+            this.mover.MoveTo( origin, time, 0, 0 )
+            wait time
+
+            e.smokeFx.Destroy()
+=======
+            EmitSoundAtPosition( TEAM_UNASSIGNED, origin, "Titan_1P_Warpfall_Start" )
+
+            PlayFX( TURBO_WARP_FX, warpPos + < 0, 0, -104 >, expect vector (this.mover.GetAngles()) )
+
+            wait 0.5
+            wait 0.4
+
+            reaper.Show()
+            EmitSoundAtPosition( TEAM_UNASSIGNED, origin, "Titan_3P_Warpfall_WarpToLanding" )
+            this.mover.MoveTo( origin,0.2, 0, 0 )
+            wait 0.2
+
+            PlayFXOnEntity( TURBO_WARP_COMPANY, reaper, "", <0.0, 0.0, 152.0> )
+>>>>>>> bc24e36 (Reaper as Titan)
+            PlayFX( $"droppod_impact", origin )
+        }
+
+        function SetReaperFree() /* void */
+		{
+            this.allowanimation = false
+            thread this.reaper.Anim_Play("sspec_speclaunch_fire") //kinda looks like the reaper is shut down
+
+			this.reaper.SetUsableByGroup( "pilot" )
+			this.reaper.SetUsePrompts( "Press %use% To Boot Up Reaper","Press %use% To Boot Up Reaper")
+		}
+
+		function SetReaperOccupied() /* void */
+		{
+            this.allowanimation = true
+			this.reaper.UnsetUsable()
+		}
+
+        function StartControl(playerent) {
+            this.idleanimstate = false
+            this.SetReaperOccupied()
+
+            entity player = expect entity (playerent)
+            this.reaper.SetOwner(player)
+            SetTeam(expect entity (this.reaper), expect int (this.reaper.GetOwner().GetTeam()))
+
+
+<<<<<<< HEAD
+
+=======
+>>>>>>> bc24e36 (Reaper as Titan)
+            AddDeathCallback( "player", OnPilotDeath )
+
+            //basically make player just a camera
+            player.DisableWeaponViewModel()
+            player.ForceStand()
+            player.SetTakeDamageType( DAMAGE_NO )
+            player.kv.VisibilityFlags = ENTITY_VISIBLE_TO_NOBODY
+
+            //position player camera
+            vector reaperorigin = expect vector (this.reaper.GetOrigin())
+            vector reaperangles = expect vector (this.reaper.GetAngles())
+            vector af = AnglesToForward (reaperangles)
+            vector au = AnglesToUp (reaperangles)
+
+            player.SetOrigin(reaperorigin + af * -150 + au * 150)
+            player.SetAngles(<reaperangles.x +this.pilotingviewoffset,reaperangles.y,reaperangles.z>) //this is the view the player will have while piloting
+            player.SetParent(this.mover)
+
+            ViewConeZero( expect entity (this.reaper.GetOwner()) ) //i think this only works when player is parented for some reason????
+
+            //add controls
+			AddButtonPressedPlayerInputCallback( player, IN_DUCK , OnExitUsed ) // exiting
+			AddButtonPressedPlayerInputCallback( player, IN_DUCKTOGGLE , OnExitUsed ) // exiting alt button
+
+            AddButtonPressedPlayerInputCallback( player, IN_MELEE, OnMeleePressed ) //melee
+            AddButtonPressedPlayerInputCallback( player, IN_JUMP, OnDashPressed ) //dashing
+
+            AddButtonPressedPlayerInputCallback( player, IN_ATTACK, OnShootPressed ) //shooting
+            AddButtonReleasedPlayerInputCallback( player, IN_ATTACK, OnShootReleased) //stop shooting
+
+<<<<<<< HEAD
+            //AddButtonPressedPlayerInputCallback( player, IN_ZOOM , OnFreeViewPressed ) // freeview start
+            //AddButtonReleasedPlayerInputCallback( player, IN_ZOOM, OnFreeViewReleased ) // freeview end
+
+            AddButtonPressedPlayerInputCallback( player, IN_ZOOM_TOGGLE , OnLaunchPressed ) // freeview start alt button
+            AddButtonReleasedPlayerInputCallback( player, IN_ZOOM_TOGGLE, OnLaunchReleased ) // freeview end alt button
+
+
+
+
+            player.ctrlreaper = this
+
+=======
+            AddButtonPressedPlayerInputCallback( player, IN_ZOOM ,  OnLaunchPressed ) //start launch
+            AddButtonReleasedPlayerInputCallback( player, IN_ZOOM, OnLaunchReleased ) //launch
+
+            AddButtonPressedPlayerInputCallback( player, IN_ZOOM_TOGGLE , OnLaunchPressed ) //.start launch alt button
+            AddButtonReleasedPlayerInputCallback( player, IN_ZOOM_TOGGLE, OnLaunchReleased ) //launch alt button
+
+
+            player.ctrlreaper = this
+>>>>>>> bc24e36 (Reaper as Titan)
+        }
+
+        function StopControl(player,shouldreenable) {
+            try{
+<<<<<<< HEAD
+            entity player = expect entity (player)
+=======
+
+            //place player slighly behind reaper & check for clipping
+            entity player = expect entity (player)
+            vector exitpoint = expect vector (this.reaper.GetOrigin()) + AnglesToForward(expect vector (this.reaper.GetAngles())) * -100
+            exitpoint = (FindNearestSafeExitPos(player,exitpoint,1))
+            player.SetOrigin(exitpoint)
+            player.SetVelocity(<0,0,0>)
+
+            //turn player from a camara into an actual player
+>>>>>>> bc24e36 (Reaper as Titan)
+			player.ClearParent()
+			player.UnforceStand()
+			player.EnableWeaponViewModel()
+
+            player.SetTakeDamageType( DAMAGE_YES )
+			player.kv.VisibilityFlags = ENTITY_VISIBLE_TO_EVERYONE
+
+<<<<<<< HEAD
+=======
+
+>>>>>>> bc24e36 (Reaper as Titan)
+            player.ctrlreaper = null
+            this.reaper.SetOwner(null)
+            SetTeam(expect entity (this.reaper),TEAM_UNASSIGNED)
+            if (expect bool (shouldreenable) && this.IsAlive) {this.SetReaperFree()}
+
+            this.shootingstate = false
+            this.launchpostrackingstate = false
+
+	        RemoveButtonPressedPlayerInputCallback( player, IN_DUCK , OnExitUsed )
+            RemoveButtonPressedPlayerInputCallback( player, IN_DUCKTOGGLE , OnExitUsed )
+         	RemoveButtonPressedPlayerInputCallback( player, IN_MELEE, OnMeleePressed )
+            RemoveButtonPressedPlayerInputCallback( player, IN_JUMP, OnDashPressed )
+            RemoveButtonPressedPlayerInputCallback( player, IN_ATTACK, OnShootPressed )
+            RemoveButtonReleasedPlayerInputCallback( player, IN_ATTACK, OnShootReleased)
+<<<<<<< HEAD
+
+            //RemoveButtonPressedPlayerInputCallback( player, IN_ZOOM , OnFreeViewPressed )
+            //RemoveButtonReleasedPlayerInputCallback( player, IN_ZOOM, OnFreeViewReleased )
+=======
+            RemoveButtonPressedPlayerInputCallback( player, IN_ZOOM , OnLaunchPressed )
+            RemoveButtonReleasedPlayerInputCallback( player, IN_ZOOM,  OnLaunchReleased )
+>>>>>>> bc24e36 (Reaper as Titan)
+            RemoveButtonPressedPlayerInputCallback( player, IN_ZOOM_TOGGLE , OnLaunchPressed )
+            RemoveButtonReleasedPlayerInputCallback( player, IN_ZOOM_TOGGLE,  OnLaunchReleased )
+
+
+            RemoveDeathCallback( "player", OnPilotDeath )
+
+<<<<<<< HEAD
+            }catch(ex) {print("Couldn't strip controls!")}
+=======
+            }catch(ex) {print(ex)}
+>>>>>>> bc24e36 (Reaper as Titan)
+
+        }
+
+        function Explode() {
+            if (IsValid(this.reaper)) {
+                this.IsAlive = false
+                this.runanimstate = false //disembark doesnt work otherwise
+
+                entity owner = expect entity (this.reaper.GetOwner())
+
+                this.reaper.UnsetUsable()
+
+                this.allowanimation = false
+                EmitSoundAtPosition( TEAM_UNASSIGNED, expect vector (this.reaper.GetOrigin()) ,"titan_nuclear_death_charge") //omfg why does this line up perfectly
+                thread this.reaper.Anim_Play("sspec_death_b")
+
+                wait 3 //let amim play
+
+                try{
+                    //PlayFX(  $"P_sup_spectre_death" , expect vector (this.reaper.GetOrigin()))
+                    Explosion_DamageDefSimple( damagedef_stalker_powersupply_explosion_large, expect vector (this.reaper.GetOrigin()),owner,expect entity (this.reaper),expect vector (this.reaper.GetOrigin()))
+                    EmitSoundAtPosition( TEAM_UNASSIGNED, expect vector (this.reaper.GetOrigin()),"titan_death_explode")
+
+                    if (expect entity (this.reaper.GetOwner()) != null) {owner.SetHealth(0)} //refresh
+
+
+                    wait 3.2 //sometimes the death animation cancels , so this will for sure get rid of the reaper
+
+                    this.reaper.Destroy()
+                } catch(ex) {print("Explode error:"+ex)}
+            }
+        }
+
+
+        /////////////////////////////////////////////////////////////Movement//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        function HandleMoveInput() {
+            while (IsValid(expect entity (this.reaper))) {
+                if(this.reaper.GetOwner() && this.mover && this.IsAlive && this.launchstate == false) {
+                    float RotateAxis = expect float(this.reaper.GetOwner().GetInputAxisRight())
+                    float MoveAxis = expect float (this.reaper.GetOwner().GetInputAxisForward())
+
+                    if (RotateAxis != 0) {thread this.RotateReaper(RotateAxis)} //a/d
+
+                    if (MoveAxis != 0) { //w/s
+                        thread this.MoveReaper(MoveAxis)
+                        if (this.runanimstate == false) {
+                            this.runanimstate = true
+                        }
+                    } else {
+                        this.runanimstate = false
+                    }
+
+                }
+                WaitFrame()
+            }
+            WaitFrame()
+        }
+
+        function RotateReaper(RotateAxis) {
+            vector reaperangles = expect vector (this.reaper.GetAngles())
+            float offset = expect float (RotateAxis * 15 * -1)
+
+            vector targetangles = <reaperangles.x,reaperangles.y + offset,reaperangles.z>
+
+            if(this.dashoncooldown) { //dont rotate if dashing
+                targetangles = reaperangles
+            }
+
+            this.mover.NonPhysicsRotateTo(targetangles,0.1,0,0)
+        }
+
+        function MoveReaper(MoveAxis) {
+            vector targetpos = FindNextMovePoint(expect entity (this.reaper),expect float(MoveAxis),false)
+            this.mover.NonPhysicsMoveTo(targetpos,0.2,0,0)
+        }
+
+        /////////////////////////////////////////////////////////////Actions//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        function ReaperDash() {
+            if (IsValid (this.reaper) && this.dashoncooldown == false && this.launchstate == false) {
+                try{
+                    this.dashoncooldown = true
+                    float mult
+                    float axis = expect float(this.reaper.GetOwner().GetInputAxisRight())
+                    if(axis == 0) { //dont dash if there is no direction pressed
+                        this.dashoncooldown = false
+                        return
+                    }else if (axis > 0) {
+                        mult = 1
+                        thread this.PlayDashAnim("right")
+                    } else if (axis < 0) {
+                        mult = -1
+                        thread this.PlayDashAnim("left")
+                    }
+
+
+                    for (int i=0;i<10;i++) {
+                        vector targetpos = FindNextMovePoint(expect entity (this.reaper),mult,true)
+                        this.mover.NonPhysicsMoveTo(targetpos,0.1,0,0)
+                        WaitFrame()
+                    }
+                    this.dashoncooldown = false
+                }catch(ex) {print(ex)}
+            }
+            return
+        }
+
+        function PerformMelee() { //check for any entities in the reaper viewcone and then applies damage to them
+            try{
+                if (IsValid (this.reaper) && this.launchstate == false) {
+                    this.meleeoncooldown = true
+                    thread this.PlayMeleeAnim()
+                    wait 0.75
+
+                    array<entity> victims = []
+                    array<VisibleEntityInCone> results = FindVisibleEntitiesInCone( this.reaper.GetOrigin() ,AnglesToForward(this.reaper.GetAngles()), 180.0 /*coneHeight\range*/, 45 /*coneangle\spread*/ , [expect entity (this.reaper)], TRACE_MASK_SHOT,VIS_CONE_ENTS_TEST_HITBOXES, null)
+
+                    foreach ( result in results )
+                    {
+                        if (IsValid(result.ent)) {
+                            entity visibleEnt = result.ent
+                            if (visibleEnt.IsEntAlive()) {
+                                victims.append(visibleEnt)
+                            }
+
+                        }
+                    }
+
+                    foreach (victim in victims) {
+                        victim.TakeDamage( 1000 ,this.reaper.GetOwner(),null, { })
+                    }
+                }
+            }catch(ex){print(ex)}
+            wait 0.5
+            this.meleeoncooldown = false
+        }
+
+        function StartReaperShoot() {
+            try{
+                if (IsValid (this.reaper) && this.launchstate == false) {
+                    this.shootingstate = true
+                    this.shootoncooldown = true
+                    thread this.PlayShootAnim()
+                    wait 1 //anim takes a bit
+                    int shootoffsetint = 0
+                    vector shootoffset = <0,0,0>
+                    vector shootvector = <0,0,0>
+                    entity owner = expect entity (this.reaper.GetOwner())
+
+                    vector reaperangles
+                    vector reaperorigin
+
+                    owner.SetAngles(expect vector (this.reaper.GetAngles())) //turn player straight before limiting view
+                    ViewConeWide(owner)
+
+
+                    while (this.shootingstate == true) {
+
+                        EmitSoundOnEntity(owner, "weapon_daemonrocket_launcher_fire" )
+                        reaperorigin = expect vector (this.reaper.GetOrigin())
+                        reaperangles = expect vector (this.reaper.GetAngles())
+                        vector af = expect vector (this.reaper.GetForwardVector())
+                        vector ar = AnglesToRight(reaperangles)
+
+                        shootoffsetint ++
+
+                        if (shootoffsetint  == 1){ //left arm
+                            shootoffset = af* 62 + ar * 75 + <0,0,60>
+                        }else if (shootoffsetint  == 2){ //right arm
+                            shootoffset = af * 150+ ar * -50 + <0,0,70>
+                        }
+                        if (shootoffsetint >= 2) {shootoffsetint = 0}
+
+                        vector shootorigin = reaperorigin + shootoffset
+
+
+                        //make the bullets meet exactly where the player is looking
+                        vector shootvectortmp = VectorToAngles(shootorigin -  GetViewTrace(expect entity (this.reaper.GetOwner())).endPos)
+                        if (shootvectortmp.y < 0) {shootvectortmp.y = shootvectortmp.y + 180}
+                        if (shootvectortmp.y > 0) {shootvectortmp.y = shootvectortmp.y - 180}
+                        vector shootvector = AnglesToForward(shootvectortmp)
+                        shootvector.z = shootvector.z * -1
+
+
+
+                        entity guy = CreateSoldier(owner.GetTeam(),reaperorigin,<0,0,0>)
+                        DispatchSpawn( guy )
+                        guy.Hide()
+                        guy.ReplaceActiveWeapon("mp_weapon_epg")
+                        entity weapon = guy.GetMainWeapons()[0]
+
+                        //doulbes the damage
+                        weapon.FireWeaponMissile(shootorigin ,shootvector, 1.0, damageTypes.largeCaliberExp, damageTypes.largeCaliberExp, true, PROJECTILE_NOT_PREDICTED )
+                        weapon.FireWeaponMissile(shootorigin ,shootvector, 1.0, damageTypes.largeCaliberExp, damageTypes.largeCaliberExp, true, PROJECTILE_NOT_PREDICTED )
+
+                        guy.Destroy()
+                        weapon.Destroy()
+                        wait 0.25
+                    }
+
+                    reaperangles = expect vector (this.reaper.GetAngles())//refresh this just in case
+                    owner.SetAngles(<reaperangles.x +this.pilotingviewoffset,reaperangles.y,reaperangles.z>) //go back tp piloting angles
+                    ViewConeZero(owner)
+                }
+            }catch(ex) {print(ex)}
+
+
+            wait 0.75
+            this.shootoncooldown = false
+
+
+        }
+
+        function StartLaunchTracking () { //track launch pos
+            if (IsValid(expect entity (this.reaper)) && this.reaper.GetOwner()) {
+                this.launchpostrackingstate = true
+                this.launchstate = true
+                this.launchoncooldown = true
+
+                this.allowanimation = false
+                this.runanimstate = false
+                thread this.reaper.Anim_Play("sspec_idle_to_speclaunch")
+
+                entity owner = expect entity (this.reaper.GetOwner())
+
+                owner.SetAngles(expect vector (this.reaper.GetAngles())) //turn player straight before limiting view
+                ViewConeFree(owner)
+
+                entity effect = PlayFX(  $"P_ar_titan_droppoint" , expect vector (this.reaper.GetOrigin()) ) //30 secs long
+<<<<<<< HEAD
+                EffectSetControlPointVector( effect, 1 , <89, 89, 89> ) //color //purple ( effect, 1 , < 61, 2, 57 > )
+=======
+                EffectSetControlPointVector( effect, 1 , <100,100,100> ) //color //purple ( effect, 1 , < 61, 2, 57 > )
+>>>>>>> bc24e36 (Reaper as Titan)
+
+                entity effectmover = CreateExpensiveScriptMover( effect.GetOrigin(), effect.GetAngles() )
+                effect.SetParent( effectmover )
+
+                while (IsValid(expect entity (this.reaper)) && this.reaper.GetOwner() && this.launchpostrackingstate == true && this.IsAlive) { //sync indicator to view and track launch pos
+                    vector tmppos = GetViewTrace( owner ).endPos
+                    vector reaperpos = expect vector (this.reaper.GetOrigin())
+
+                    while (EntInSolid (expect entity (this.reaper),tmppos + <0,0,35>) ) { //if aimong at a wall , correct with adding height
+                        tmppos.z = tmppos.z + 5
+                    }
+
+                    if (VectorDistanceBelowLimit (tmppos,reaperpos ,1200) && tmppos.z - 575 < reaperpos.z) { //if not to far away or too high
+                        effectmover.NonPhysicsMoveTo(tmppos,0.1,0,0)
+                        this.lasttrackedlaunchpos = tmppos
+                    }
+                    WaitFrame()
+                }
+
+                if (effect) {effect.Destroy()}
+
+                this.allowanimation = true
+                this.idleanimstate = false
+
+
+                owner = expect entity (this.reaper.GetOwner())//refesh just in case
+                if (owner) {
+                    vector reaperangles = expect vector (this.reaper.GetAngles())
+                    owner.SetAngles(<reaperangles.x +this.pilotingviewoffset,reaperangles.y,reaperangles.z>) //go back tp piloting angles
+                    ViewConeZero(owner)
+                }
+
+            }
+        }
+
+        function ReaperLaunch() { //launch reaper to tracked pos
+            if (IsValid(this.reaper)) {
+                if (this.lasttrackedlaunchpos != null) {
+                    this.reaperinlaunch = true
+
+                    vector targetpos = expect vector (this.lasttrackedlaunchpos)
+                    vector reaperpos = expect vector (this.reaper.GetOrigin())
+
+                    //rotate into the direction reaper is launching
+                    vector targetangles = VectorToAngles(expect vector (this.reaper.GetOrigin()) - targetpos) //this function is magic and I dont have a clue as to how it works
+                    targetangles.x = 0
+                    targetangles.z = 0
+                    if (targetangles.y < 0) {targetangles.y = targetangles.y + 180} //dk why its 180 degrees of , but this fixes it
+                    if (targetangles.y > 0) {targetangles.y = targetangles.y - 180}
+                    thread this.mover.NonPhysicsRotateTo(targetangles,0.3,0,0)
+
+
+                    float distance = pow((pow(reaperpos.x - targetpos.x,2))+(pow(reaperpos.y - targetpos.y,2))+(pow(reaperpos.z - targetpos.z,2)),0.5) //formula from google , suprised it works
+
+                    vector launcharcpoint = reaperpos + AnglesToForward(targetangles)*(distance/3) + <0,0,(targetpos.z - reaperpos.z) + distance/4.5 + 180>
+
+                    thread this.PlayLaunchAnim()
+
+                    this.mover.NonPhysicsMoveTo(launcharcpoint,0.75,0.3,0)
+                    wait 0.75
+                    this.mover.NonPhysicsMoveTo(targetpos,0.75,0,0.3)
+                    wait 0.75
+
+
+                    try {
+                        this.reaper.SetHealth(this.reaper.GetHealth()+80)
+<<<<<<< HEAD
+                        Explosion_DamageDefSimple(damagedef_reaper_groundslam,targetpos,expect entity (this.reaper.GetOwner()),expect entity (this.reaper),targetpos)//this does 80 damage to reaper for some reason
+=======
+                        Explosion_DamageDefSimple(damagedef_reaper_groundslam,targetpos ,expect entity (this.reaper.GetOwner()),expect entity (this.reaper),targetpos)//this does 80 damage to reaper for some reason
+>>>>>>> bc24e36 (Reaper as Titan)
+
+                    }catch(ex){}
+
+
+                    this.launchstate = false
+                    this.lasttrackedlaunchpos = null
+
+                    this.reaperinlaunch = false
+
+                    wait 1 //cooldown time
+                    EmitSoundOnEntity(expect entity (this.reaper), "HUD_TitanUtilityAbility_replenished_1P" ) //play a sound for now
+                    this.launchoncooldown = false
+
+                } else {
+                    this.launchstate = false
+                    this.launchoncooldown = false
+                }
+            }
+        }
+
+        /////////////////////////////////////////////////////////////Anims///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        //cycle anims
+        function PlayIdleAnim() {
+            while (IsValid(expect entity (this.reaper))) {
+                if (this.animsplaying > 0) {this.idleanimstate = false}
+                if (this.animsplaying <= 0 && this.allowanimation == true && this.idleanimstate == false) {
+                    thread this.reaper.Anim_Play( "sspec_idle" )
+                    this.idleanimstate = true
+                }
+                WaitFrame()
+            }
+        }
+
+        function PlayRunAnim() {
+            while (IsValid(expect entity (this.reaper))) {
+                if (this.runanimstate == true && this.animsplaying <= 0 && this.allowanimation == true ) {
+
+                    this.animsplaying = this.animsplaying + 1
+                    thread this.PlayRunSound()
+                    thread this.reaper.Anim_Play( "sspec_sprint_temp")
+                    this.reaper.Anim_Stop()
+
+                    while (this.runanimstate == true && this.launchstate == false){
+                        WaitFrame()
+                        if(this.animsplaying > 1){break}
+                    }
+
+                    this.animsplaying = this.animsplaying + -1
+                }
+                WaitFrame()
+            }
+        }
+
+        function PlayRunSound() {
+            if (this.runsoundstate == false) {
+                while (this.runanimstate == true && IsValid(expect entity (this.reaper)) && this.launchstate == false) {
+                    try{
+                    this.runsoundstate = true
+                    EmitSoundOnEntity(expect entity (this.reaper), "superspectre_jog_concrete_3p" )
+                    wait 0.4
+                    }catch(ex){print(ex)}
+                }
+                this.runsoundstate = false
+            }
+        }
+
+        //interupt anims
+        function PlayDashAnim(direction) {
+            if (IsValid(this.reaper) && this.allowanimation == true ) {
+                this.animsplaying = this.animsplaying + 1
+
+                this.runanimstate = false
+
+                EmitSoundOnEntity(expect entity (this.reaper), "stryder_dash_1p" )
+
+                string str = expect string(direction)
+                if (str == "right") {thread this.reaper.Anim_Play( "sspec_dash_short_r_hop")}
+                if (str == "left") {thread this.reaper.Anim_Play( "sspec_dash_short_l_hop")}
+                this.reaper.Anim_Stop()
+                wait 1.1
+                this.animsplaying = this.animsplaying -1
+            }
+        }
+
+        function PlayMeleeAnim() {
+            if (IsValid(this.reaper) && this.allowanimation == true ) {
+                this.animsplaying = this.animsplaying + 1
+
+                this.runanimstate = false
+
+                thread this.reaper.Anim_Play( "sspec_idle_melee_high")
+                this.reaper.Anim_Stop()
+                wait 1.25
+                this.animsplaying = this.animsplaying -1
+            }
+        }
+
+        function PlayShootAnim() {
+            if (IsValid(this.reaper) && this.allowanimation == true ) {
+                this.animsplaying = this.animsplaying + 1
+                thread this.reaper.Anim_Play( "sspec_idle_to_attack_f") //sspec_idle_to_startup_to_attack_f takes longer but looks cooler
+
+                while (this.shootingstate == true){WaitFrame()}
+                this.animsplaying = this.animsplaying + -1
+            }
+        }
+
+        function PlayLaunchAnim() {
+            if (IsValid(this.reaper)) {
+                this.animsplaying = this.animsplaying + 1
+
+                thread this.reaper.Anim_Play( "sspec_walk_f_to_megajump_f")
+                this.reaper.Anim_Stop()
+
+                wait 1.5
+
+                this.animsplaying = this.animsplaying + -1
+            }
+        }
+
+
+
+    }
+
+}//end of class
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////Input-Callbacks///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var function OnReaperUsed (var prop , var player) {
+    expect entity (prop)
+    var ctrlreaper = ctrlreapers[prop]
+
+    if(!player.ctrlreaper) { //dont embark if the play is already in a reaper
+        ctrlreaper.StartControl(expect entity (player))
+    }
+
+}
+
+void function OnExitUsed( entity player )
+{
+	if ( !player.ctrlreaper ) {
+		return
+        print("No reaper to exit from.")
+    }else if (!player.ctrlreaper.runanimstate)  {
+		player.ctrlreaper.StopControl(player,true)
+    }
+}
+
+void function OnMeleePressed( entity player ) {
+    if(player.ctrlreaper ) {
+        if (player.ctrlreaper.meleeoncooldown == false) {
+        thread player.ctrlreaper.PerformMelee()
+        }
+    }
+}
+
+
+void function OnDashPressed( entity player ) {
+    if(player.ctrlreaper) {
+        thread player.ctrlreaper.ReaperDash()
+    }
+}
+
+void function OnShootPressed( entity player ) {
+    if(player.ctrlreaper) {
+        if (player.ctrlreaper.shootoncooldown == false) {
+            thread player.ctrlreaper.StartReaperShoot()
+        }
+    }
+}
+
+
+void function OnShootReleased( entity player ) {
+    if(player.ctrlreaper) {
+        player.ctrlreaper.shootingstate = false
+    }
+}
+
+void function OnLaunchPressed ( entity player ) {
+    if(player.ctrlreaper) {
+        if (player.ctrlreaper.launchstate == false && player.ctrlreaper.IsAlive && player.ctrlreaper.launchoncooldown == false) {
+            thread player.ctrlreaper.StartLaunchTracking ()
+        }
+    }
+}
+
+void function OnLaunchReleased ( entity player ) {
+    thread OnLaunchReleasedThreaded (player)
+}
+
+void function OnLaunchReleasedThreaded (entity player) {
+    wait 0.1
+    if(player.ctrlreaper ) {
+        if (player.ctrlreaper.IsAlive &&  player.ctrlreaper.reaperinlaunch == false) {
+            player.ctrlreaper.launchpostrackingstate = false
+            thread player.ctrlreaper.ReaperLaunch()
+        }
+    }
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////Damage-Callbacks///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void function OnReaperDamaged( entity reaper, var damageInfo )
+{
+	if ( !IsValid( reaper ) ) {
+		return
+	}
+
+
+
+	int damageSourceID = DamageInfo_GetDamageSourceIdentifier( damageInfo )
+	entity attacker = DamageInfo_GetAttacker( damageInfo )
+	float damageAmount = DamageInfo_GetDamage( damageInfo )
+
+	if ( !damageSourceID && !damageAmount && !attacker ) {
+		return
+	}
+
+	if (attacker.IsTitan()) { //make them more difficult for titans without making them indestructable for pilots
+		damageAmount = damageAmount / 1.8
+	}
+
+	float newHealth = reaper.GetHealth() - damageAmount
+
+
+	if( newHealth <= 30 )
+	{
+        try  {
+            if (ctrlreapers[reaper].IsAlive) {
+                thread ctrlreapers[reaper].Explode()
+            }
+        } catch(ex1) {}
+	} else {
+        reaper.SetHealth( newHealth )
+    }
+
+
+
+}
+
+void function OnPilotDeath( entity player, var damageInfo )
+{
+	try{
+	    player.ctrlreaper.StopControl(player,false)
+    }catch(ex){}
+}
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////Utility///////////////////////////////////////////////////////////////////////////////////////////////////////////
+vector function FindNextMovePoint(entity ent, float multiplier, bool boostmode) { //finds a position in front of the ent that is not in the ground
+    try{
+        vector distant
+        var ctrlreaper = ctrlreapers[ent]
+
+        if(boostmode == false ) {
+            distant = ent.GetOrigin() + ent.GetForwardVector() * 100 * multiplier + <0,0,130> //up and forward of the reaper
+        }else {
+            distant = ent.GetOrigin() + ent.GetRightVector() * 60 * multiplier + <0,0,130>
+        }
+
+        vector traceEnd = distant - < 0, 0, 10000> //directly down
+
+        TraceResults r = TraceLine( distant, traceEnd,ent, TRACE_MASK_SHOT, TRACE_COLLISION_GROUP_NONE ) //traces betewwn the distant and traceend
+        vector destination = r.endPos
+
+        if (EntInSolid(ent , destination + <0,0,70> /*ignore legs*/) || ctrlreaper.shootingstate == true || ctrlreaper.launchstate == true ||destination.z + 250 < ent.GetOrigin().z || destination.z - 80 > ent.GetOrigin().z) {//dont move if the reaper would be clipping , shooting , falling of a ledge or be too high
+            destination = ent.GetOrigin()
+        }
+
+        return destination
+    }
+    catch(ex) {
+        print("Finding a move position failed.")
+        return ent.GetOrigin()
+    }
+}
+
+bool function EntInSolid (entity ent,vector targetpos) {
+
+    local ignorents = [];
+    ignorents.append(ent)
+    int solidMask = TRACE_MASK_PLAYERSOLID
+
+    vector mins = < -20,-20,0>
+    vector maxs = <20,20,75>
+
+    TraceResults result = TraceHull( targetpos ,targetpos, mins, maxs, ignorents, solidMask, TRACE_COLLISION_GROUP_DEBRIS )
+    if ( IsValid( result.hitEnt )  ){
+        return true
+    }
+
+    return false
+
+}
+
+bool function VectorDistanceBelowLimit (vector vector1 , vector vector2, float limit) {
+    float distance = pow((pow(vector1.x - vector2.x,2))+(pow(vector1.y - vector2.y,2)),0.5)
+
+    if (distance < limit) {return true}
+    return false
+
+}
+
+<<<<<<< HEAD
+=======
+vector function FindNearestSafeExitPos(entity player, vector targetPos, int severity) //this uses recursion I think
+{
+    if(severity >= 1500)
+    {
+        print("Error:could not find a save position for player")
+       return < player.GetOrigin().x,player.GetOrigin().y,player.GetOrigin().z+1500 >
+    }
+
+
+	//check if adding/removing severity  from the x,y or z coords will stop the player from clipping
+
+	//adding / removing y
+    if( !EntInSolid( player, < targetPos.x, targetPos.y+severity, targetPos.z > ) )
+        return < targetPos.x, targetPos.y+severity, targetPos.z >
+
+    if( !EntInSolid( player, < targetPos.x, targetPos.y-severity, targetPos.z > ) )
+        return < targetPos.x, targetPos.y-severity, targetPos.z >
+
+	//adding / removing x
+    if( !EntInSolid( player, < targetPos.x+severity, targetPos.y, targetPos.z > ) )
+        return < targetPos.x+severity, targetPos.y, targetPos.z >
+
+    if( !EntInSolid( player, < targetPos.x-severity, targetPos.y, targetPos.z > ) )
+        return < targetPos.x-severity, targetPos.y, targetPos.z >
+
+	//adding / removing z(height)
+	if( !EntInSolid( player, < targetPos.x, targetPos.y, targetPos.z +severity> ) )
+        return < targetPos.x, targetPos.y, targetPos.z +severity>
+
+    if( !EntInSolid( player, < targetPos.x, targetPos.y, targetPos.z -severity > ) )
+        return < targetPos.x, targetPos.y, targetPos.z -severity>
+
+
+    return FindNearestSafePos( player, targetPos, severity+5 ) //severity goes up by 5 each time adding severity doesnt stop the player from clipping
+}
+
+
+
+
+>>>>>>> bc24e36 (Reaper as Titan)
+
+
+
+//todo:
+//find actual shooting anim
+//dont allow to embark titans when in reaper
+//make projectiles do splash damage & respect teams
+<<<<<<< HEAD
+//add cooldown indicators (particularly for launching & health) , maybe with 1.10 server side rui
+//finish jumping ( make jumping have a circular shape (presti on discord sent me the formula)
+=======
+//add indicators (particularly for launching cooldown & health) , maybe with 1.10 server side rui
+//finish jumping ( make jumping have a circular shape (presti on discord sent me the formula)
+//fix launch impact damage , kinda unrelyable atm (maybe use FindVisibleEntitiesInCone with a cone that looks down)
+>>>>>>> bc24e36 (Reaper as Titan)
+
+
+
+
+<<<<<<< HEAD
+//done: make melee work better against grunts , maybe look into how titan melee works //still a bit janky but now works on multiple entities at once with entinviewcone func
+//done: make teams work so you cant kill a friendly reaper
+//done: make guns fire so the to shots meet at the exact enpos of your view insted of crossing at a fixed point //used VectorToAngles
+//done: added launch impact damage with explosiondefsimple (also used for explosion now)
+//done: add warp in animation/effect //copied the code from the superspectre ai script
+=======
+
+//done: make melee work better against grunts , maybe look into how titan melee works //still a bit janky but now works on multiple entities at once with FindVisibleEntitiesInCone func
+//done: make teams work so you cant kill a friendly reaper
+//done: make guns fire so the to shots meet at the exact enpos of your view insted of crossing at a fixed point //used VectorToAngles
+//done: added launch impact damage with explosiondefsimple (also used for explosion now)
+//done: add warp in animation/effect //copied the code from the superspectre ai script
+//done: make a way to call in a reaper without the console //press melee and use to switch your next titanfall to be a reaper
+//done: prevent players from getting stuck in walls when exiting while their in walls //used FindNearestSafeExitPos from VoyageDB
+>>>>>>> bc24e36 (Reaper as Titan)

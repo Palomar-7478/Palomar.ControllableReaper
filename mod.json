@@ -1,0 +1,23 @@
+{
+   "Name": "Controllable Reapers",
+   "Description": "Testing",
+    "Version": "1.0",
+   "LoadPriority": 2,
+   "ConVars": [],
+   "Scripts": [
+   {
+      "Path": "Reaper_Controller.nut",
+      "RunOn": "SERVER",
+      "ServerCallback": {
+         "After": "Reaper_Controller_Init"
+      }
+   },
+   {
+      "Path": "Reaper_Classes.gnut",
+      "RunOn": "SERVER",
+      "ServerCallback": {
+         "Before": "ReaperClassesInit"
+      }
+   }],
+   "Localisation": []
+}
