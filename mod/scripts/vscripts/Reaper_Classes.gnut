@@ -14,6 +14,8 @@ void function ReaperClassesInit(){
     PrecacheParticleSystem( $"P_sup_spectre_death" )
     PrecacheParticleSystem( $"P_ar_titan_droppoint" )
 
+    AddCallback_OnPlayerRespawned( OnPilotRespawned_Fallback)
+
 
     CPlayer.ctrlreaper <- null //add a property to base player entity
     CPlayer.EquipedReaperAsTitan <- false
@@ -275,7 +277,6 @@ void function ReaperClassesInit(){
                     damageTypes.explosive,
                     eDamageSourceId.mp_weapon_epg,
                     BALL_LIGHTNING_FX_TABLE) //its just an epmty effect i think , wich is good , because the epg already has an explosion effect
-                print(this.reaper.GetHealth())
             }
             catch(ex) {print(ex)}
         }
@@ -543,9 +544,7 @@ void function ReaperClassesInit(){
 
 
                     try {
-                        this.reaper.SetHealth(this.reaper.GetHealth()+80)
-                        Explosion_DamageDefSimple(damagedef_reaper_groundslam,targetpos ,expect entity (this.reaper.GetOwner()),expect entity (this.reaper),targetpos)//this does 80 damage to reaper for some reason
-
+                        Explosion_DamageDefSimple(damagedef_reaper_groundslam,targetpos ,expect entity (this.reaper.GetOwner()),expect entity (this.reaper),targetpos)
                     }catch(ex){}
 
 
@@ -750,16 +749,14 @@ void function OnLaunchReleasedThreaded (entity player) {
 
 
 
-////////////////////////////////////////////////////////////////////Damage-Callbacks///////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////Damage-Misc-Callbacks///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 void function OnReaperDamaged( entity reaper, var damageInfo )
 {
-	if ( !IsValid( reaper ) ) {
+	if ( !IsValid( reaper ) && !IsValid( reaper.GetOwner() )) {
 		return
 	}
-
-
 
 	int damageSourceID = DamageInfo_GetDamageSourceIdentifier( damageInfo )
 	entity attacker = DamageInfo_GetAttacker( damageInfo )
@@ -768,6 +765,11 @@ void function OnReaperDamaged( entity reaper, var damageInfo )
 	if ( !damageSourceID && !damageAmount && !attacker ) {
 		return
 	}
+
+    if (attacker == reaper.GetOwner() || attacker == reaper) { //prevents damage from groundslam & splash damage ,etc
+        return
+    }
+
 
 	if (attacker.IsTitan()) { //make them more difficult for titans without making them indestructable for pilots
 		damageAmount = damageAmount / 1.8
@@ -796,6 +798,19 @@ void function OnPilotDeath( entity player, var damageInfo )
 	try{
 	    player.ctrlreaper.StopControl(player,false)
     }catch(ex){}
+}
+
+void function OnPilotRespawned_Fallback( entity player)
+{
+    try {
+        player.ClearParent()
+        player.UnforceStand()
+        player.EnableWeaponViewModel()
+
+        player.SetTakeDamageType( DAMAGE_YES )
+        player.kv.VisibilityFlags = ENTITY_VISIBLE_TO_EVERYONE
+    } catch(ex) {print(ex)}
+
 }
 
 
@@ -902,7 +917,7 @@ vector function FindNearestSafeExitPos(entity player, vector targetPos, int seve
 //todo:
 //find actual shooting anim
 //dont allow to embark titans when in reaper
-//make projectiles respect teams
+//make projectiles respect teams (splash damage already does)
 //add indicators (particularly for launching cooldown & health) , maybe with 1.10 server side rui
 //finish jumping ( make jumping have a circular shape (presti on discord sent me the formula)
 //fix launch impact damage , kinda unrelyable atm (maybe use FindVisibleEntitiesInCone with a cone that looks down)
@@ -919,3 +934,5 @@ vector function FindNearestSafeExitPos(entity player, vector targetPos, int seve
 //done: make a way to call in a reaper without the console //press melee and use to switch your next titanfall to be a reaper
 //done: prevent players from getting stuck in walls when exiting while their in walls //used FindNearestSafeExitPos from VoyageDB
 //done: make projectiles do splash damage //i made CreateSplashDamage() as a janky workaround
+
+//bugs: death anim stopping , forcestand still active after death

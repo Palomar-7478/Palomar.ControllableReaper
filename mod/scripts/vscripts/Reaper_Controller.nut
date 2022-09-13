@@ -44,7 +44,6 @@ void function PrevenWeaponCycle(entity player ,entity activeweaponbeforechange) 
 	if (player.UseActive == true ) { //prevents weapon change when you toggled reaper
 		foreach (index , wpn in player.GetMainWeapons()) {
 			if (wpn == activeweaponbeforechange) {
-				print("Weapon cycle prevented")
 				player.SetActiveWeaponBySlot( index )
 			}
 		}
