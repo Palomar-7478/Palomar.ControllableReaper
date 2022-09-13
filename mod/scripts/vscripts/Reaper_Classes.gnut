@@ -237,7 +237,7 @@ void function ReaperClassesInit(){
                 wait 3 //let amim play
 
                 try{
-                    //PlayFX(  $"P_sup_spectre_death" , expect vector (this.reaper.GetOrigin()))
+                    PlayFX(  $"P_sup_spectre_death" , expect vector (this.reaper.GetOrigin()))
                     Explosion_DamageDefSimple( damagedef_stalker_powersupply_explosion_large, expect vector (this.reaper.GetOrigin()),owner,expect entity (this.reaper),expect vector (this.reaper.GetOrigin()))
                     EmitSoundAtPosition( TEAM_UNASSIGNED, expect vector (this.reaper.GetOrigin()),"titan_death_explode")
 
@@ -516,7 +516,7 @@ void function ReaperClassesInit(){
 
         function ReaperLaunch() { //launch reaper to tracked pos
             if (IsValid(this.reaper)) {
-                if (this.lasttrackedlaunchpos != null) {
+                if (this.lasttrackedlaunchpos != null && this.IsAlive) {
                     this.reaperinlaunch = true
 
                     vector targetpos = expect vector (this.lasttrackedlaunchpos)
@@ -558,6 +558,7 @@ void function ReaperClassesInit(){
                     this.launchoncooldown = false
 
                 } else {
+                    this.lasttrackedlaunchpos = null
                     this.launchstate = false
                     this.launchoncooldown = false
                 }
@@ -726,7 +727,7 @@ void function OnShootReleased( entity player ) {
 
 void function OnLaunchPressed ( entity player ) {
     if(player.ctrlreaper) {
-        if (player.ctrlreaper.launchstate == false && player.ctrlreaper.IsAlive && player.ctrlreaper.launchoncooldown == false && !EntInSolid(player,player.GetOrigin())) {
+        if (player.ctrlreaper.launchstate == false && player.ctrlreaper.IsAlive && player.ctrlreaper.launchoncooldown == false && !EntInSolid(player,player.GetOrigin()) && player.ctrlreaper.shootingstate == false) {
             thread player.ctrlreaper.StartLaunchTracking ()
         }
     }
@@ -739,7 +740,7 @@ void function OnLaunchReleased ( entity player ) {
 void function OnLaunchReleasedThreaded (entity player) {
     wait 0.1
     if(player.ctrlreaper ) {
-        if (player.ctrlreaper.IsAlive &&  player.ctrlreaper.reaperinlaunch == false) {
+        if (player.ctrlreaper.IsAlive && player.ctrlreaper.launchstate == true && player.ctrlreaper.reaperinlaunch == false) {
             player.ctrlreaper.launchpostrackingstate = false
             thread player.ctrlreaper.ReaperLaunch()
         }
