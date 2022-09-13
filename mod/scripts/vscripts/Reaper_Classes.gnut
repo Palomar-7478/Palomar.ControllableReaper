@@ -150,7 +150,7 @@ void function ReaperClassesInit(){
             vector af = AnglesToForward (reaperangles)
             vector au = AnglesToUp (reaperangles)
 
-            player.SetOrigin(reaperorigin + af * -150 + au * 150)
+            player.SetOrigin(reaperorigin + af * -200 + au * 150)
             player.SetAngles(<reaperangles.x +this.pilotingviewoffset,reaperangles.y,reaperangles.z>) //this is the view the player will have while piloting
             player.SetParent(this.mover)
 
