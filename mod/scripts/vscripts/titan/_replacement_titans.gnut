@@ -714,7 +714,7 @@ void function CreateTitanForPlayerAndHotdrop( entity player, Point spawnPoint, T
 
 			//spawn reaper
 			var veryepicreaper = CtrlReaper(droppos,player.GetAngles()) //create reaper after 3.9 secs , because the warp in animation takes 1.1 secs
-
+			player.EquipedReaperAsTitan = false
 
 		} else {
 			Chat_ServerPrivateMessage(player,"Not a suitable location to call in your Reaper!", false)

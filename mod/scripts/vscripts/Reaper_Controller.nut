@@ -5,6 +5,7 @@ void function Reaper_Controller_Init () {
 	AddCallback_OnClientConnected( AddSelectInputs )
 	CPlayer.CycleActive <- false
 	CPlayer.UseActive <- false
+	CPlayer.EquipedReaperAsTitan <- false
 
     AddClientCommandCallback( "spawnreaper", spawnfunc )
     AddClientCommandCallback( "test", testfunc )

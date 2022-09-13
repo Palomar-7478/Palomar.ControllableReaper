@@ -18,7 +18,6 @@ void function ReaperClassesInit(){
 
 
     CPlayer.ctrlreaper <- null //add a property to base player entity
-    CPlayer.EquipedReaperAsTitan <- false
 
     class CtrlReaper {
         //changing values
@@ -155,6 +154,7 @@ void function ReaperClassesInit(){
             player.SetAngles(<reaperangles.x +this.pilotingviewoffset,reaperangles.y,reaperangles.z>) //this is the view the player will have while piloting
             player.SetParent(this.mover)
 
+            player.SetTitanEmbarkEnabled( false )
             ViewConeZero( expect entity (this.reaper.GetOwner()) ) //i think this only works when player is parented for some reason????
 
             //add controls
@@ -199,6 +199,8 @@ void function ReaperClassesInit(){
             this.reaper.SetOwner(null)
             SetTeam(expect entity (this.reaper),TEAM_UNASSIGNED)
             if (expect bool (shouldreenable) && this.IsAlive) {this.SetReaperFree()}
+
+            player.SetTitanEmbarkEnabled( true )
 
             this.shootingstate = false
             this.launchpostrackingstate = false
@@ -810,6 +812,7 @@ void function OnPilotRespawned_Fallback( entity player)
 
         player.SetTakeDamageType( DAMAGE_YES )
         player.kv.VisibilityFlags = ENTITY_VISIBLE_TO_EVERYONE
+        player.SetTitanEmbarkEnabled( true )
     } catch(ex) {print(ex)}
 
 }
@@ -916,12 +919,11 @@ vector function FindNearestSafeExitPos(entity player, vector targetPos, int seve
 
 
 //todo:
-//find actual shooting anim
-//dont allow to embark titans when in reaper
 //make projectiles respect teams (splash damage already does)
-//add indicators (particularly for launching cooldown & health) , maybe with 1.10 server side rui
+//add ui (particularly for launching cooldown & health) , maybe with 1.10 server side rui
+
 //finish jumping ( make jumping have a circular shape (presti on discord sent me the formula)
-//fix launch impact damage , kinda unrelyable atm (maybe use FindVisibleEntitiesInCone with a cone that looks down)
+//fix launch impact damage , kinda unrelyable atm (maybe use FindVisibleEntitiesInCone with a cone that looks down) //not sure , not a high priority
 
 
 
@@ -935,5 +937,6 @@ vector function FindNearestSafeExitPos(entity player, vector targetPos, int seve
 //done: make a way to call in a reaper without the console //press melee and use to switch your next titanfall to be a reaper
 //done: prevent players from getting stuck in walls when exiting while their in walls //used FindNearestSafeExitPos from VoyageDB
 //done: make projectiles do splash damage //i made CreateSplashDamage() as a janky workaround
+//done: dont allow to embark titans when in reaper //turns titan invisable among other obvious issues //turns out there is a function for that  player.SetTitanEmbarkEnabled( false )
 
-//bugs: death anim stopping , forcestand still active after death
+//bugs: death anim stopping , forcestand still active after death(maybe fixed idk)
