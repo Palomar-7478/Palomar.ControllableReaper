@@ -54,12 +54,15 @@ void function PrevenWeaponCycle(entity player ,entity activeweaponbeforechange) 
 
 void function CheckForCombination(entity player) {
 	if (player.CycleActive == true && player.UseActive == true) {
-		player.EquipedReaperAsTitan = !expect bool (player.EquipedReaperAsTitan)
-		EmitSoundOnEntity(player, "titan_eject_dpad" )
-		if (player.EquipedReaperAsTitan) {
-			Chat_ServerPrivateMessage(player,"Your next Titanfall will be a: Reaper !", false)
-		} else {
-			Chat_ServerPrivateMessage(player,"Your next Titanfall will be a: Titan !", false)
+		if (IsValid(player)) {
+			player.EquipedReaperAsTitan = !expect bool (player.EquipedReaperAsTitan)
+			//EmitSoundOnEntity(player, "titan_eject_dpad" )
+			EmitSoundOnEntityOnlyToPlayer( player,player, "titan_eject_dpad" )
+			if (player.EquipedReaperAsTitan) {
+				Chat_ServerPrivateMessage(player,"Your next Titanfall will be a: Reaper !", false)
+			} else {
+				Chat_ServerPrivateMessage(player,"Your next Titanfall will be a: Titan !", false)
+			}
 		}
 	}
 }
