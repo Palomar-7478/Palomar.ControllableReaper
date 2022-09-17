@@ -31,17 +31,17 @@ void function SetUseInactive(entity player) {
 }
 
 void function SetCycleActive(entity player) {
-	PrevenWeaponCycle(player,player.GetActiveWeapon())
+	PreventWeaponCycle(player,player.GetActiveWeapon())
 	player.CycleActive = true
 	CheckForCombination(player)
 }
 
 void function SetCycleInactive(entity player) {
-	PrevenWeaponCycle(player,player.GetActiveWeapon())
+	PreventWeaponCycle(player,player.GetActiveWeapon())
 	player.CycleActive = false
 }
 
-void function PrevenWeaponCycle(entity player ,entity activeweaponbeforechange) {
+void function PreventWeaponCycle(entity player ,entity activeweaponbeforechange) {
 	if (player.UseActive == true ) { //prevents weapon change when you toggled reaper
 		foreach (index , wpn in player.GetMainWeapons()) {
 			if (wpn == activeweaponbeforechange) {
@@ -59,9 +59,9 @@ void function CheckForCombination(entity player) {
 			//EmitSoundOnEntity(player, "titan_eject_dpad" )
 			EmitSoundOnEntityOnlyToPlayer( player,player, "titan_eject_dpad" )
 			if (player.EquipedReaperAsTitan) {
-				Chat_ServerPrivateMessage(player,"Your next Titanfall will be a: Reaper !", false)
+				Chat_ServerPrivateMessage(player,"\x1b[33mYour next Titanfall will be a: \x1b[31mReaper !\x1b[0m", false)
 			} else {
-				Chat_ServerPrivateMessage(player,"Your next Titanfall will be a: Titan !", false)
+				Chat_ServerPrivateMessage(player,"\x1b[33mYour next Titanfall will be a: \x1b[31mTitan !\x1b[0m", false)
 			}
 		}
 	}
@@ -95,7 +95,6 @@ bool function testfunc (entity player, array<string> args ) {
 }
 
 void function testthread (entity player) {
-
 
 }
 

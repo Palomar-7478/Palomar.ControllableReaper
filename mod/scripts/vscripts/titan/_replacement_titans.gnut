@@ -717,7 +717,7 @@ void function CreateTitanForPlayerAndHotdrop( entity player, Point spawnPoint, T
 			//player.EquipedReaperAsTitan = false maybe wanna auto toggle after calling in a reaper
 
 		} else {
-			Chat_ServerPrivateMessage(player,"Not a suitable location to call in your Reaper!", false)
+			Chat_ServerPrivateMessage(player,"\x1b[33mNot a suitable location to call in your Reaper!\x1b[0m", false)
 		}
 
 	}

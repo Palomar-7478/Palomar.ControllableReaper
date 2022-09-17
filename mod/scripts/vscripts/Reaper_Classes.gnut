@@ -323,7 +323,8 @@ void function ReaperClassesInit(){
         }
 
         function MoveReaper(MoveAxis) {
-            vector targetpos = FindNextMovePoint(expect entity (this.reaper),expect float(MoveAxis),false)
+            float mult = expect float(MoveAxis)
+            vector targetpos = FindNextMovePoint(expect entity (this.reaper),mult,false)
             this.mover.NonPhysicsMoveTo(targetpos,0.2,0,0)
         }
 
