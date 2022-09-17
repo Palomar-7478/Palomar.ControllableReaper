@@ -1,7 +1,7 @@
 {
    "Name": "Controllable Reapers",
    "Description": "Testing",
-    "Version": "1.0",
+    "Version": "1.1",
    "LoadPriority": 2,
    "ConVars": [],
    "Scripts": [
