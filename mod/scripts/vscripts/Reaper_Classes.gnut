@@ -910,7 +910,7 @@ vector function FindNearestSafeExitPos(entity player, vector targetPos, int seve
         return < targetPos.x, targetPos.y, targetPos.z -severity>
 
 
-    return FindNearestSafePos( player, targetPos, severity+5 ) //severity goes up by 5 each time adding severity doesnt stop the player from clipping
+    return FindNearestSafeExitPos( player, targetPos, severity+5 ) //severity goes up by 5 each time adding severity doesnt stop the player from clipping
 }
 
 
