@@ -8,7 +8,7 @@ void function Reaper_Controller_Init () {
 	CPlayer.EquipedReaperAsTitan <- false
 
     //AddClientCommandCallback( "spawnreaper", spawnfunc )
-    //AddClientCommandCallback( "test", testfunc )
+	AddClientCommandCallback( "test", testfunc )
 	//AddClientCommandCallback( "dummy", spawndummyfunc )
 }
 
@@ -95,7 +95,9 @@ bool function testfunc (entity player, array<string> args ) {
 }
 
 void function testthread (entity player) {
-
+	entity r = CreateSuperSpectre(TEAM_UNASSIGNED,GetViewTrace( player ).endPos,<0,0,0>)
+	DispatchSpawn(r)
+	r.Freeze()
 }
 
 
