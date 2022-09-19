@@ -814,6 +814,7 @@ void function OnPilotRespawned_Fallback( entity player)
         player.SetTakeDamageType( DAMAGE_YES )
         player.kv.VisibilityFlags = ENTITY_VISIBLE_TO_EVERYONE
         player.SetTitanEmbarkEnabled( true )
+        player.ctrlreaper = null
     } catch(ex) {print(ex)}
 
 }
