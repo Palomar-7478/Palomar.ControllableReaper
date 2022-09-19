@@ -923,7 +923,7 @@ vector function FindNearestSafeExitPos(entity player, vector targetPos, int seve
 //todo:
 //make projectiles respect teams (splash damage already does)
 //add ui (particularly for launching cooldown & health) , maybe with 1.10 server side rui
-
+//dont let repear drop when under roof
 //finish jumping ( make jumping have a circular shape (presti on discord sent me the formula)
 //fix launch impact damage , kinda unrelyable atm (maybe use FindVisibleEntitiesInCone with a cone that looks down) //not sure , not a high priority
 
