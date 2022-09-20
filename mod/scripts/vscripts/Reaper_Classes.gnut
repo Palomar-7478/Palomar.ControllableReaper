@@ -23,8 +23,9 @@ void function ReaperClassesInit(){
 
     class CtrlReaper {
         //changing values
-        reaper = null //entity            |stores the prop
+        reaper = null //entity            |stores the reaper prop
         mover = null //entity             |the mover
+        pseudotitan = null //entity       |an invisible autotitan above the reaper that handles the reaper showing up on the minimap and also shows the health to the user like a titan //super jank ,I now
 
         IsAlive = true //bool             |after and during the explosion the reaper is dead
 
@@ -76,9 +77,9 @@ void function ReaperClassesInit(){
             //use handling
             AddCallback_OnUseEntity( expect entity( this.reaper ), OnReaperUsed)
 
+
             thread this.ReaperWarpfall()
 
-            this.SetReaperFree()
             thread this.HandleMoveInput()
             thread this.PlayIdleAnim()
             thread this.PlayRunAnim()
@@ -112,6 +113,8 @@ void function ReaperClassesInit(){
 
             PlayFXOnEntity( TURBO_WARP_COMPANY, reaper, "", <0.0, 0.0, 152.0> )
             PlayFX( $"droppod_impact", origin )
+
+            this.SetReaperFree()
         }
 
         function SetReaperFree() /* void */
@@ -175,8 +178,19 @@ void function ReaperClassesInit(){
             AddButtonPressedPlayerInputCallback( player, IN_ZOOM_TOGGLE , OnLaunchPressed ) //.start launch alt button
             AddButtonReleasedPlayerInputCallback( player, IN_ZOOM_TOGGLE, OnLaunchReleased ) //launch alt button
 
-
             player.ctrlreaper = this
+
+            //pseudotitan init
+            TitanLoadoutDef loadout = GetTitanLoadoutForPlayer( player )
+            this.pseudotitan = CreateAutoTitanForPlayer_FromTitanLoadout( player, loadout,reaperorigin + <0,0, 1500>,reaperangles)
+            DispatchSpawn(this.pseudotitan)
+            this.pseudotitan.Freeze()
+            this.pseudotitan.SetParent(this.mover)
+            this.pseudotitan.kv.VisibilityFlags = ENTITY_VISIBLE_TO_NOBODY
+
+            float reaperhealthfrac = float (this.reaper.GetHealth()) / expect int (this.reapermaxhealth)
+            this.pseudotitan.SetHealth(reaperhealthfrac * expect int (this.pseudotitan.GetMaxHealth())) //sync titan health with reaper health
+
         }
 
         function StopControl(player,shouldreenable) {
@@ -221,6 +235,10 @@ void function ReaperClassesInit(){
 
             RemoveDeathCallback( "player", OnPilotDeath )
 
+            if (IsValid(this.pseudotitan)) {
+                this.pseudotitan.Destroy()
+            }
+
             }catch(ex) {print(ex)}
 
         }
@@ -245,10 +263,11 @@ void function ReaperClassesInit(){
                     Explosion_DamageDefSimple( damagedef_stalker_powersupply_explosion_large, expect vector (this.reaper.GetOrigin()),owner,expect entity (this.reaper),expect vector (this.reaper.GetOrigin()))
                     EmitSoundAtPosition( TEAM_UNASSIGNED, expect vector (this.reaper.GetOrigin()),"titan_death_explode")
 
-                    if (expect entity (this.reaper.GetOwner()) != null) {owner.SetHealth(0)} //refresh
-
+                    if (expect entity (this.reaper.GetOwner()) != null) {owner.SetHealth(0)}
+                    if (IsValid(this.pseudotitan)){ this.pseudotitan.Destroy() }
 
                     wait 3.2 //sometimes the death animation cancels , so this will for sure get rid of the reaper
+
 
                     this.reaper.Destroy()
                 } catch(ex) {print("Explode error:"+ex)}
@@ -799,7 +818,7 @@ void function OnReaperDamaged( entity reaper, var damageInfo )
 	entity attacker = DamageInfo_GetAttacker( damageInfo )
 	float damageAmount = DamageInfo_GetDamage( damageInfo )
 
-	if ( !damageSourceID && !damageAmount && !attacker ) {
+	if ( !damageSourceID && !damageAmount && !attacker && !attacker.IsProjectile()) {
 		return
 	}
 
@@ -809,26 +828,42 @@ void function OnReaperDamaged( entity reaper, var damageInfo )
 
 
 	if (attacker.IsTitan()) { //make them more difficult for titans without making them indestructable for pilots
-		damageAmount = damageAmount / 1.8
+		damageAmount = damageAmount / 2.5
 	}
 
+    int oldHealth = reaper.GetHealth()
 	float newHealth = reaper.GetHealth() - damageAmount
 
 
-	if( newHealth <= 30 )
+
+	if( newHealth <= 30 ) //dont use the normal death handling , use the explosion func of the reaper
 	{
         try  {
             if (ctrlreapers[reaper].IsAlive) {
                 thread ctrlreapers[reaper].Explode()
+                if (IsValid(ctrlreapers[reaper].pseudotitan)) {
+                    ctrlreapers[reaper].pseudotitan.TakeDamage(ctrlreapers[reaper].pseudotitan.GetHealth() + 1,attacker,null, { }) //jump to doomstate of pseudotitan
+                }
             }
         } catch(ex1) {}
-	} else {
+	}
+    else {
         reaper.SetHealth( newHealth )
+
+        //apply equal percent of damage to pseudotitan
+        try {
+            if (IsValid(ctrlreapers[reaper].pseudotitan) ) {
+                entity pseudotitan = expect entity (ctrlreapers[reaper].pseudotitan)
+                int healthdifferencefraction = pseudotitan.GetMaxHealth() / expect int (ctrlreapers[reaper].reapermaxhealth)
+                pseudotitan.TakeDamage( damageAmount * healthdifferencefraction ,attacker,null, { }) //I think this adds hitmarkers for the attacker for some reason?? great for me tho
+            }
+        }
+        catch(ex2) {}
     }
 
 
-
 }
+
 
 void function OnPilotDeath( entity player, var damageInfo )
 {

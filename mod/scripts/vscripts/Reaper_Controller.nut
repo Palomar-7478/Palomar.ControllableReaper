@@ -95,7 +95,9 @@ bool function testfunc (entity player, array<string> args ) {
 }
 
 void function testthread (entity player) {
-
+	TitanLoadoutDef loadout = GetTitanLoadoutForPlayer( player )
+	entity pseudotitan = CreateAutoTitanForPlayer_FromTitanLoadout( player, loadout,GetViewTrace( player ).endPos,<0,0,0>)
+	DispatchSpawn( pseudotitan)
 }
 
 
