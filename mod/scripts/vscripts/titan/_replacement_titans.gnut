@@ -34,6 +34,9 @@ global function SetRequestTitanGamemodeRules
 
 global function CreateTitanForPlayerAndHotdrop
 
+//added things here
+const ROOFCHECKHEIGHT = 1000
+
 struct {
 	array<int> ETATimeThresholds = [ 120, 60, 30, 15 ]
 	float ETA2MinUpperBound = 123
@@ -691,30 +694,35 @@ void function CreateTitanForPlayerAndHotdrop( entity player, Point spawnPoint, T
 
 		vector droppos = GetViewTrace( player ).endPos
 
-		if (VectorDistanceBelowLimit(player.GetOrigin(),droppos,1000) && !EntInSolid(player /*dont have the reaper entity here*/,droppos + <0,0,50>)) {
+		if (VectorDistanceBelowLimit(player.GetOrigin(),droppos,1000) && !EntInSolid(null,droppos + <0,0,50>)) {
+			if (!LocationIsUnderRoof(droppos , 10 , ROOFCHECKHEIGHT)) {
 
-			//earn meter management
-			float oldRewardFrac = PlayerEarnMeter_GetRewardFrac( player )
+				//earn meter management
+				float oldRewardFrac = PlayerEarnMeter_GetRewardFrac( player )
 
-			PlayerEarnMeter_Reset( player )
-			ClearTitanAvailable( player )
+				PlayerEarnMeter_Reset( player )
+				ClearTitanAvailable( player )
 
-			if (oldRewardFrac != 0){ //its 0 if there was no boost equiped i think
-				PlayerEarnMeter_SetRewardFrac( player, oldRewardFrac ) //set reward to right position
-				PlayerEarnMeter_EnableReward( player ) //enable reward
+				if (oldRewardFrac != 0){ //its 0 if there was no boost equiped i think
+					PlayerEarnMeter_SetRewardFrac( player, oldRewardFrac ) //set reward to right position
+					PlayerEarnMeter_EnableReward( player ) //enable reward
+				}
+
+
+				//indicator & sound
+				EmitSoundAtPosition(TEAM_UNASSIGNED,droppos, "titan_hot_drop_turbo_begin" )
+				Remote_CallFunction_Replay( player, "ServerCallback_ReplacementTitanSpawnpoint", droppos.x, droppos.y, droppos.z, Time() + 5)
+				wait 3
+				EmitSoundAtPosition(TEAM_UNASSIGNED,droppos, "titan_drop_pod_turbo_landing" )
+				wait 0.9
+
+				//spawn reaper
+				var veryepicreaper = CtrlReaper(droppos,player.GetAngles()) //create reaper after 3.9 secs , because the warp in animation takes 1.1 secs
+				//player.EquipedReaperAsTitan = false maybe wanna auto toggle after calling in a reaper
+
+			}else {
+				Chat_ServerPrivateMessage(player,"\x1b[33mCan't call in Reaper. A roof is in the way!\x1b[0m", false)
 			}
-
-
-			//indicator & sound
-			EmitSoundAtPosition(TEAM_UNASSIGNED,droppos, "titan_hot_drop_turbo_begin" )
-			Remote_CallFunction_Replay( player, "ServerCallback_ReplacementTitanSpawnpoint", droppos.x, droppos.y, droppos.z, Time() + 5)
-			wait 3
-			EmitSoundAtPosition(TEAM_UNASSIGNED,droppos, "titan_drop_pod_turbo_landing" )
-			wait 0.9
-
-			//spawn reaper
-			var veryepicreaper = CtrlReaper(droppos,player.GetAngles()) //create reaper after 3.9 secs , because the warp in animation takes 1.1 secs
-			//player.EquipedReaperAsTitan = false maybe wanna auto toggle after calling in a reaper
 
 		} else {
 			Chat_ServerPrivateMessage(player,"\x1b[33mNot a suitable location to call in your Reaper!\x1b[0m", false)

@@ -95,9 +95,7 @@ bool function testfunc (entity player, array<string> args ) {
 }
 
 void function testthread (entity player) {
-	entity r = CreateSuperSpectre(TEAM_UNASSIGNED,GetViewTrace( player ).endPos,<0,0,0>)
-	DispatchSpawn(r)
-	r.Freeze()
+
 }
 
 

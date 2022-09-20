@@ -3,8 +3,10 @@ untyped
 global var CtrlReaper
 
 global function ReaperClassesInit
+
 global function VectorDistanceBelowLimit
 global function EntInSolid
+global function LocationIsUnderRoof
 
 global table<entity , var> ctrlreapers //track wich prop is for wich instance of a class
 
@@ -283,6 +285,37 @@ void function ReaperClassesInit(){
             catch(ex) {print(ex)}
         }
 
+        function FindNextMovePoint(ent,multiplier,boostmode) { //finds a position in front of the ent that is not in the ground
+            try{
+                entity ent = expect entity(ent)
+                float multiplier = expect float (multiplier)
+                bool boostmode = expect bool (boostmode)
+
+                vector distant
+                var ctrlreaper = ctrlreapers[ent]
+
+                if(boostmode == false ) {
+                    distant = ent.GetOrigin() + ent.GetForwardVector() * 100 * multiplier + <0,0,130> //up and forward of the reaper
+                }else {
+                    distant = ent.GetOrigin() + ent.GetRightVector() * 60 * multiplier + <0,0,130>
+                }
+
+                vector traceEnd = distant - < 0, 0, 10000> //directly down
+
+                TraceResults r = TraceLine( distant, traceEnd,ent, TRACE_MASK_SHOT, TRACE_COLLISION_GROUP_NONE ) //traces betewwn the distant and traceend
+                vector destination = r.endPos
+
+                if (EntInSolid(ent , destination + <0,0,70> /*ignore legs*/) || ctrlreaper.shootingstate == true || ctrlreaper.launchstate == true ||destination.z + 250 < ent.GetOrigin().z || destination.z - 80 > ent.GetOrigin().z) {//dont move if the reaper would be clipping , shooting , falling of a ledge or be too high
+                    destination = ent.GetOrigin()
+                }
+
+                return destination
+            }
+            catch(ex) {
+                print("Finding a move position failed.")
+                return ent.GetOrigin()
+            }
+        }
 
         /////////////////////////////////////////////////////////////Movement//////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -324,7 +357,7 @@ void function ReaperClassesInit(){
 
         function MoveReaper(MoveAxis) {
             float mult = expect float(MoveAxis)
-            vector targetpos = FindNextMovePoint(expect entity (this.reaper),mult,false)
+            vector targetpos = expect vector (this.FindNextMovePoint(expect entity (this.reaper),mult,false))
             this.mover.NonPhysicsMoveTo(targetpos,0.2,0,0)
         }
 
@@ -349,7 +382,7 @@ void function ReaperClassesInit(){
 
 
                     for (int i=0;i<10;i++) {
-                        vector targetpos = FindNextMovePoint(expect entity (this.reaper),mult,true)
+                        vector targetpos = expect vector (this.FindNextMovePoint(expect entity (this.reaper),mult,true))
                         this.mover.NonPhysicsMoveTo(targetpos,0.1,0,0)
                         WaitFrame()
                     }
@@ -824,38 +857,10 @@ void function OnPilotRespawned_Fallback( entity player)
 
 
 ///////////////////////////////////////////////////////////////////////////Utility///////////////////////////////////////////////////////////////////////////////////////////////////////////
-vector function FindNextMovePoint(entity ent, float multiplier, bool boostmode) { //finds a position in front of the ent that is not in the ground
-    try{
-        vector distant
-        var ctrlreaper = ctrlreapers[ent]
-
-        if(boostmode == false ) {
-            distant = ent.GetOrigin() + ent.GetForwardVector() * 100 * multiplier + <0,0,130> //up and forward of the reaper
-        }else {
-            distant = ent.GetOrigin() + ent.GetRightVector() * 60 * multiplier + <0,0,130>
-        }
-
-        vector traceEnd = distant - < 0, 0, 10000> //directly down
-
-        TraceResults r = TraceLine( distant, traceEnd,ent, TRACE_MASK_SHOT, TRACE_COLLISION_GROUP_NONE ) //traces betewwn the distant and traceend
-        vector destination = r.endPos
-
-        if (EntInSolid(ent , destination + <0,0,70> /*ignore legs*/) || ctrlreaper.shootingstate == true || ctrlreaper.launchstate == true ||destination.z + 250 < ent.GetOrigin().z || destination.z - 80 > ent.GetOrigin().z) {//dont move if the reaper would be clipping , shooting , falling of a ledge or be too high
-            destination = ent.GetOrigin()
-        }
-
-        return destination
-    }
-    catch(ex) {
-        print("Finding a move position failed.")
-        return ent.GetOrigin()
-    }
-}
 
 bool function EntInSolid (entity ent,vector targetpos) {
-
     local ignorents = [];
-    ignorents.append(ent)
+    if (IsValid(ent)){ignorents.append(ent)}
     int solidMask = TRACE_MASK_PLAYERSOLID
 
     vector mins = < -20,-20,0>
@@ -869,6 +874,23 @@ bool function EntInSolid (entity ent,vector targetpos) {
     return false
 
 }
+
+bool function LocationIsUnderRoof(targetpos,severity,checkheight) {
+    vector targetpos = expect vector (targetpos)
+    int severity = expect int (severity)
+    int checkheight = expect int (checkheight)
+
+    if (severity > checkheight) {
+        return false
+    }
+
+    if (EntInSolid(null,targetpos + <0,0,severity>)) {
+        return true
+    }
+
+    return LocationIsUnderRoof(targetpos,severity + 10,checkheight)
+}
+
 
 bool function VectorDistanceBelowLimit (vector vector1 , vector vector2, float limit) {
     float distance = pow((pow(vector1.x - vector2.x,2))+(pow(vector1.y - vector2.y,2)),0.5)
