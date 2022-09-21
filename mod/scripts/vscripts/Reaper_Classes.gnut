@@ -20,6 +20,7 @@ void function ReaperClassesInit(){
 
 
     CPlayer.ctrlreaper <- null //add a property to base player entity
+    CPlayer.backeduptitancharge <- null
 
     class CtrlReaper {
         //changing values
@@ -180,7 +181,10 @@ void function ReaperClassesInit(){
 
             player.ctrlreaper = this
 
+
             //pseudotitan init
+            player.backeduptitancharge = PlayerEarnMeter_GetEarnedFrac( player )//backing this up because it gets reset when an autotian is created
+
             TitanLoadoutDef loadout = GetTitanLoadoutForPlayer( player )
             this.pseudotitan = CreateAutoTitanForPlayer_FromTitanLoadout( player, loadout,reaperorigin + <0,0, 1500>,reaperangles)
             DispatchSpawn(this.pseudotitan)
@@ -207,10 +211,10 @@ void function ReaperClassesInit(){
 			player.ClearParent()
 			player.UnforceStand()
 			player.EnableWeaponViewModel()
-
             player.SetTakeDamageType( DAMAGE_YES )
 			player.kv.VisibilityFlags = ENTITY_VISIBLE_TO_EVERYONE
 
+            //strip reaper
             player.ctrlreaper = null
             this.reaper.SetOwner(null)
             SetTeam(expect entity (this.reaper),TEAM_UNASSIGNED)
@@ -221,6 +225,7 @@ void function ReaperClassesInit(){
             this.shootingstate = false
             this.launchpostrackingstate = false
 
+            //remove controls
 	        RemoveButtonPressedPlayerInputCallback( player, IN_DUCK , OnExitUsed )
             RemoveButtonPressedPlayerInputCallback( player, IN_DUCKTOGGLE , OnExitUsed )
          	RemoveButtonPressedPlayerInputCallback( player, IN_MELEE, OnMeleePressed )
@@ -232,15 +237,33 @@ void function ReaperClassesInit(){
             RemoveButtonPressedPlayerInputCallback( player, IN_ZOOM_TOGGLE , OnLaunchPressed )
             RemoveButtonReleasedPlayerInputCallback( player, IN_ZOOM_TOGGLE,  OnLaunchReleased )
 
-
             RemoveDeathCallback( "player", OnPilotDeath )
 
             if (IsValid(this.pseudotitan)) {
                 this.pseudotitan.Destroy()
+
+                //reset player titancharge to what it was before embarking reaper
+                if (player.backeduptitancharge != null) {
+                    float value = expect float (player.backeduptitancharge)
+                    thread this.SetTitanChargeOnExit(player,value)
+                }
+
             }
+
+
 
             }catch(ex) {print(ex)}
 
+        }
+
+        function SetTitanChargeOnExit(player,value) { //has to be slighly delayed dk why
+            wait 0.1
+            entity player = expect entity (player)
+            float value = expect float (value)
+            player.p.earnMeterOwnedFrac = value
+            player.SetPlayerNetFloat(  EARNMETER_OWNEDFRAC,value)
+            player.p.earnMeterOverdriveFrac = value
+            player.SetPlayerNetFloat( EARNMETER_EARNEDFRAC,value)
         }
 
         function Explode() {

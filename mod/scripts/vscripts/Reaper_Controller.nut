@@ -95,9 +95,16 @@ bool function testfunc (entity player, array<string> args ) {
 }
 
 void function testthread (entity player) {
-	TitanLoadoutDef loadout = GetTitanLoadoutForPlayer( player )
-	entity pseudotitan = CreateAutoTitanForPlayer_FromTitanLoadout( player, loadout,GetViewTrace( player ).endPos,<0,0,0>)
-	DispatchSpawn( pseudotitan)
+	//print(PlayerEarnMeter_GetEarnedFrac( player ))
+	//PlayerEarnMeter_AddOwnedFrac(player,0.2)
+	try {
+		float value = 1.0
+		player.p.earnMeterOwnedFrac = value
+		player.SetPlayerNetFloat(  EARNMETER_OWNEDFRAC,value)
+		player.p.earnMeterOverdriveFrac = value
+		player.SetPlayerNetFloat( EARNMETER_EARNEDFRAC,value)
+
+	}catch(ex) {print(ex)}
 }
 
 
