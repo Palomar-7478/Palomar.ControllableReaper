@@ -52,7 +52,7 @@ void function ReaperClassesInit(){
 
         //consts
         pilotingviewoffset = 16.0 //float |the amount the view-angle should be changed up(-) or down(+) relative to the reaper
-        reapermaxhealth = 1000 //int      |the reapers max health
+        reapermaxhealth = 2000 //int      |the reapers max health
 
 
 
@@ -851,7 +851,7 @@ void function OnReaperDamaged( entity reaper, var damageInfo )
 
 
 	if (attacker.IsTitan()) { //make them more difficult for titans without making them indestructable for pilots
-		damageAmount = damageAmount / 2.5
+		damageAmount = damageAmount / 1.5
 	}
 
     int oldHealth = reaper.GetHealth()
