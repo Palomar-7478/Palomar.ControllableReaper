@@ -18,7 +18,6 @@ void function AddSelectInputs(entity player) { //combination is kinda weird
 
 	AddButtonReleasedPlayerInputCallback( player, IN_USE , SetUseInactive )
 	AddButtonReleasedPlayerInputCallback( player, IN_WEAPON_CYCLE, SetCycleInactive )
-
 }
 
 void function SetUseActive(entity player) {
@@ -95,16 +94,11 @@ bool function testfunc (entity player, array<string> args ) {
 }
 
 void function testthread (entity player) {
-	//print(PlayerEarnMeter_GetEarnedFrac( player ))
-	//PlayerEarnMeter_AddOwnedFrac(player,0.2)
-	try {
-		float value = 1.0
-		player.p.earnMeterOwnedFrac = value
-		player.SetPlayerNetFloat(  EARNMETER_OWNEDFRAC,value)
-		player.p.earnMeterOverdriveFrac = value
-		player.SetPlayerNetFloat( EARNMETER_EARNEDFRAC,value)
-
-	}catch(ex) {print(ex)}
+	//while (true) {
+	//vector origin = player.GetOrigin()
+	//Remote_CallFunction_NonReplay( player, "ServerCallback_FW_NotifyEnterFriendlyArea")
+	///WaitFrame()
+	//}
 }
 
 

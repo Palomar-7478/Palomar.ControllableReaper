@@ -193,7 +193,7 @@ void function ReaperClassesInit(){
             this.pseudotitan.kv.VisibilityFlags = ENTITY_VISIBLE_TO_NOBODY
 
             float reaperhealthfrac = float (this.reaper.GetHealth()) / expect int (this.reapermaxhealth)
-            this.pseudotitan.SetHealth(reaperhealthfrac * expect int (this.pseudotitan.GetMaxHealth())) //sync titan health with reaper health
+            this.pseudotitan.SetHealth(reaperhealthfrac * expect int (this.pseudotitan.GetMaxHealth())) //sync titan health percent with reaper health percent
 
         }
 
@@ -552,7 +552,7 @@ void function ReaperClassesInit(){
 
                 entity owner = expect entity (this.reaper.GetOwner())
 
-                owner.SetAngles(expect vector (this.reaper.GetAngles())) //turn player straight before limiting view
+                owner.SetAngles(expect vector (this.reaper.GetAngles())) //turn player straight before unlimiting view , otherwise view controls are tilted and weird
                 ViewConeFree(owner)
 
                 entity effect = PlayFX(  $"P_ar_titan_droppoint" , expect vector (this.reaper.GetOrigin()) ) //30 secs long
@@ -586,7 +586,7 @@ void function ReaperClassesInit(){
                 if (owner) {
                     vector reaperangles = expect vector (this.reaper.GetAngles())
                     owner.SetAngles(<reaperangles.x +this.pilotingviewoffset,reaperangles.y,reaperangles.z>) //go back tp piloting angles
-                    ViewConeZero(owner)
+                    ViewConeZero(owner) //lock view again
                 }
 
             }
@@ -744,11 +744,11 @@ void function ReaperClassesInit(){
             }
         }
 
+        //Anim_Stop right after starting the animation makes it play it without moving the model around
 
+    }//end of class
 
-    }
-
-}//end of class
+}//end of init
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////Input-Callbacks///////////////////////////////////////////////////////////////////////////////////////////////////////////
