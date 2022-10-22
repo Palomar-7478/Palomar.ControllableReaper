@@ -449,8 +449,10 @@ void function ReaperClassesInit(){
                         NSEditStatusMessageOnPlayer( expect entity (this.reaper.GetOwner()),"Dash:   Cooldown ["+ string(i)+"]","","ID_REAPERDASH")
                         wait 0.5
                     }
-                    NSEditStatusMessageOnPlayer( expect entity (this.reaper.GetOwner()),"Dash:   Ready","","ID_REAPERDASH")
-                    EmitSoundOnEntityOnlyToPlayer( expect entity (this.reaper.GetOwner()) ,expect entity (this.reaper.GetOwner()), "HUD_TitanUtilityAbility_replenished_1P" )
+                    if (IsValid (this.reaper.GetOwner())) {
+                        NSEditStatusMessageOnPlayer( expect entity (this.reaper.GetOwner()),"Dash:   Ready","","ID_REAPERDASH")
+                        EmitSoundOnEntityOnlyToPlayer( expect entity (this.reaper.GetOwner()) ,expect entity (this.reaper.GetOwner()), "HUD_TitanUtilityAbility_replenished_1P" )
+                    }
                     this.dashoncooldown = false
                 }catch(ex) {print(ex)}
             }
@@ -562,8 +564,10 @@ void function ReaperClassesInit(){
                 NSEditStatusMessageOnPlayer( expect entity (this.reaper.GetOwner()),"Weapon System:   Cooldown ["+ string(i)+"]","","ID_REAPERSHOOT")
                 wait 0.25
             }
-            NSEditStatusMessageOnPlayer( expect entity (this.reaper.GetOwner()),"Weapon System:   Ready","","ID_REAPERSHOOT")
-            EmitSoundOnEntityOnlyToPlayer( expect entity (this.reaper.GetOwner()) ,expect entity (this.reaper.GetOwner()), "HUD_TitanUtilityAbility_replenished_1P" )
+            if (IsValid (this.reaper.GetOwner())) {
+                NSEditStatusMessageOnPlayer( expect entity (this.reaper.GetOwner()),"Weapon System:   Ready","","ID_REAPERSHOOT")
+                EmitSoundOnEntityOnlyToPlayer( expect entity (this.reaper.GetOwner()) ,expect entity (this.reaper.GetOwner()), "HUD_TitanUtilityAbility_replenished_1P" )
+            }
             this.shootoncooldown = false
         }
 
@@ -665,8 +669,12 @@ void function ReaperClassesInit(){
                         NSEditStatusMessageOnPlayer( expect entity (this.reaper.GetOwner()),"Launch:   Cooldown ["+ string(i)+"]","","ID_REAPERLAUNCH")
                         wait 1
                     }
-                    NSEditStatusMessageOnPlayer( expect entity (this.reaper.GetOwner()),"Launch:   Ready","","ID_REAPERLAUNCH")
-                    EmitSoundOnEntityOnlyToPlayer( expect entity (this.reaper.GetOwner()) ,expect entity (this.reaper.GetOwner()), "HUD_TitanUtilityAbility_replenished_1P" )
+
+                    if (IsValid (this.reaper.GetOwner())) {
+                        NSEditStatusMessageOnPlayer( expect entity (this.reaper.GetOwner()),"Launch:   Ready","","ID_REAPERLAUNCH")
+                        EmitSoundOnEntityOnlyToPlayer( expect entity (this.reaper.GetOwner()) ,expect entity (this.reaper.GetOwner()), "HUD_TitanUtilityAbility_replenished_1P" )
+                    }
+
                     this.launchoncooldown = false
 
                 } else {
