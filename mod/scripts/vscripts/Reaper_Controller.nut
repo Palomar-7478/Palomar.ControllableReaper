@@ -6,9 +6,10 @@ void function Reaper_Controller_Init () {
 	CPlayer.CycleActive <- false
 	CPlayer.UseActive <- false
 	CPlayer.EquipedReaperAsTitan <- false
+	CPlayer.ToggleOnCooldown <- false
 
     //AddClientCommandCallback( "spawnreaper", spawnfunc )
-	AddClientCommandCallback( "test", testfunc )
+	//AddClientCommandCallback( "test", testfunc )
 	//AddClientCommandCallback( "dummy", spawndummyfunc )
 }
 
@@ -22,7 +23,7 @@ void function AddSelectInputs(entity player) { //combination is kinda weird
 
 void function SetUseActive(entity player) {
 	player.UseActive = true
-	CheckForCombination(player)
+	thread CheckForCombination(player)
 }
 
 void function SetUseInactive(entity player) {
@@ -32,7 +33,7 @@ void function SetUseInactive(entity player) {
 void function SetCycleActive(entity player) {
 	PreventWeaponCycle(player,player.GetActiveWeapon())
 	player.CycleActive = true
-	CheckForCombination(player)
+	thread CheckForCombination(player)
 }
 
 void function SetCycleInactive(entity player) {
@@ -52,16 +53,23 @@ void function PreventWeaponCycle(entity player ,entity activeweaponbeforechange)
 }
 
 void function CheckForCombination(entity player) {
-	if (player.CycleActive == true && player.UseActive == true) {
+	if (player.CycleActive == true && player.UseActive == true && player.ToggleOnCooldown == false) {
 		if (IsValid(player)) {
+			player.ToggleOnCooldown = true
 			player.EquipedReaperAsTitan = !expect bool (player.EquipedReaperAsTitan)
 			//EmitSoundOnEntity(player, "titan_eject_dpad" )
 			EmitSoundOnEntityOnlyToPlayer( player,player, "titan_eject_dpad" )
 			if (player.EquipedReaperAsTitan) {
-				Chat_ServerPrivateMessage(player,"\x1b[33mYour next Titanfall will be a: \x1b[31mReaper !\x1b[0m", false)
+				//Chat_ServerPrivateMessage(player,"\x1b[33mYour next Titanfall will be a: \x1b[31mReaper !\x1b[0m", false)
+				NSSendLargeMessageToPlayer( player,"Reaper Selected", "",1.8, "rui/callsigns/callsign_43_col")
 			} else {
-				Chat_ServerPrivateMessage(player,"\x1b[33mYour next Titanfall will be a: \x1b[31mTitan !\x1b[0m", false)
+				//Chat_ServerPrivateMessage(player,"\x1b[33mYour next Titanfall will be a: \x1b[31mTitan !\x1b[0m", false)
+				string titanclass = GetTitanLoadoutForPlayer( player ).titanClass
+				if (titanclass == "vanguard") {titanclass = "monarch"} //i hate how they call this titan like 3 different things ffs
+				NSSendLargeMessageToPlayer( player,"Titan Selected", "",1.8, "rui/callsigns/callsign_fd_"+ titanclass +"_master")
 			}
+			wait 1.8
+			player.ToggleOnCooldown = false
 		}
 	}
 }
