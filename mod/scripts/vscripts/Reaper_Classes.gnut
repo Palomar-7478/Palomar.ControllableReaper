@@ -37,6 +37,7 @@ void function ReaperClassesInit(){
 
         shootingstate = false //bool      |if reaper is currently shooting
 
+        dashing = false //bool            |if reaper dash is active
         dashoncooldown = false  //bool    |if dash is on cooldown
         meleeoncooldown = false //bool    |if melee is on cooldown
         shootoncooldown = false //bool    |if shooting is on cooldown (used to prevent spamming the shoot button)
@@ -195,6 +196,10 @@ void function ReaperClassesInit(){
             float reaperhealthfrac = float (this.reaper.GetHealth()) / expect int (this.reapermaxhealth)
             this.pseudotitan.SetHealth(reaperhealthfrac * expect int (this.pseudotitan.GetMaxHealth())) //sync titan health percent with reaper health percent
 
+            //create status messages for cooldowns
+            NSCreateStatusMessageOnPlayer(player,"Launch:   Ready","","ID_REAPERLAUNCH")
+            NSCreateStatusMessageOnPlayer(player,"Dash:   Ready","","ID_REAPERDASH")
+            NSCreateStatusMessageOnPlayer(player,"Weapon System:   Ready","","ID_REAPERSHOOT")
         }
 
         function StopControl(player,shouldreenable) {
@@ -239,18 +244,20 @@ void function ReaperClassesInit(){
 
             RemoveDeathCallback( "player", OnPilotDeath )
 
+            //removing status messages
+            NSDeleteStatusMessageOnPlayer( player, "ID_REAPERLAUNCH" )
+            NSDeleteStatusMessageOnPlayer( player, "ID_REAPERDASH" )
+            NSDeleteStatusMessageOnPlayer( player, "ID_REAPERSHOOT" )
+
+            //delete pseudotitan
             if (IsValid(this.pseudotitan)) {
                 this.pseudotitan.Destroy()
-
                 //reset player titancharge to what it was before embarking reaper
                 if (player.backeduptitancharge != null) {
                     float value = expect float (player.backeduptitancharge)
                     thread this.SetTitanChargeOnExit(player,value)
                 }
-
             }
-
-
 
             }catch(ex) {print(ex)}
 
@@ -390,7 +397,7 @@ void function ReaperClassesInit(){
 
             vector targetangles = <reaperangles.x,reaperangles.y + offset,reaperangles.z>
 
-            if(this.dashoncooldown) { //dont rotate if dashing
+            if(this.dashing) { //dont rotate if dashing
                 targetangles = reaperangles
             }
 
@@ -408,11 +415,13 @@ void function ReaperClassesInit(){
         function ReaperDash() {
             if (IsValid (this.reaper) && this.dashoncooldown == false && this.launchstate == false) {
                 try{
-                    this.dashoncooldown = true
+
                     float mult
                     float axis = expect float(this.reaper.GetOwner().GetInputAxisRight())
+
                     if(axis == 0) { //dont dash if there is no direction pressed
                         this.dashoncooldown = false
+                        this.dashing = false
                         return
                     }else if (axis > 0) {
                         mult = 1
@@ -422,12 +431,26 @@ void function ReaperClassesInit(){
                         thread this.PlayDashAnim("left")
                     }
 
+                    this.dashoncooldown = true
+                    this.dashing = true
+
+                    NSEditStatusMessageOnPlayer( expect entity (this.reaper.GetOwner()),"Dash:   Active","","ID_REAPERDASH")
 
                     for (int i=0;i<10;i++) {
                         vector targetpos = expect vector (this.FindNextMovePoint(expect entity (this.reaper),mult,true))
                         this.mover.NonPhysicsMoveTo(targetpos,0.1,0,0)
                         WaitFrame()
                     }
+
+                    this.dashing = false
+
+                    //cooldown
+                    for (int i = 3;i>0;i--){
+                        NSEditStatusMessageOnPlayer( expect entity (this.reaper.GetOwner()),"Dash:   Cooldown ["+ string(i)+"]","","ID_REAPERDASH")
+                        wait 0.5
+                    }
+                    NSEditStatusMessageOnPlayer( expect entity (this.reaper.GetOwner()),"Dash:   Ready","","ID_REAPERDASH")
+                    EmitSoundOnEntityOnlyToPlayer( expect entity (this.reaper.GetOwner()) ,expect entity (this.reaper.GetOwner()), "HUD_TitanUtilityAbility_replenished_1P" )
                     this.dashoncooldown = false
                 }catch(ex) {print(ex)}
             }
@@ -485,6 +508,7 @@ void function ReaperClassesInit(){
 
                     while (this.shootingstate == true) {
 
+                        NSEditStatusMessageOnPlayer( expect entity (this.reaper.GetOwner()),"Weapon System:   Active","","ID_REAPERSHOOT")
                         EmitSoundOnEntity(owner, "weapon_daemonrocket_launcher_fire" )
                         reaperorigin = expect vector (this.reaper.GetOrigin())
                         reaperangles = expect vector (this.reaper.GetAngles())
@@ -533,11 +557,14 @@ void function ReaperClassesInit(){
                 }
             }catch(ex) {print(ex)}
 
-
-            wait 0.75
+            //cooldown
+            for (int i = 3;i>0;i--){
+                NSEditStatusMessageOnPlayer( expect entity (this.reaper.GetOwner()),"Weapon System:   Cooldown ["+ string(i)+"]","","ID_REAPERSHOOT")
+                wait 0.25
+            }
+            NSEditStatusMessageOnPlayer( expect entity (this.reaper.GetOwner()),"Weapon System:   Ready","","ID_REAPERSHOOT")
+            EmitSoundOnEntityOnlyToPlayer( expect entity (this.reaper.GetOwner()) ,expect entity (this.reaper.GetOwner()), "HUD_TitanUtilityAbility_replenished_1P" )
             this.shootoncooldown = false
-
-
         }
 
         function StartLaunchTracking () { //track launch pos
@@ -593,9 +620,10 @@ void function ReaperClassesInit(){
         }
 
         function ReaperLaunch() { //launch reaper to tracked pos
-            if (IsValid(this.reaper)) {
+            if (IsValid(this.reaper) && IsValid(this.reaper.GetOwner())) {
                 if (this.lasttrackedlaunchpos != null && this.IsAlive) {
                     this.reaperinlaunch = true
+                    NSEditStatusMessageOnPlayer( expect entity (this.reaper.GetOwner()),"Launch:   Active","","ID_REAPERLAUNCH")
 
                     vector targetpos = expect vector (this.lasttrackedlaunchpos)
                     vector reaperpos = expect vector (this.reaper.GetOrigin())
@@ -631,8 +659,14 @@ void function ReaperClassesInit(){
 
                     this.reaperinlaunch = false
 
-                    wait 1 //cooldown time
-                    EmitSoundOnEntity(expect entity (this.reaper), "HUD_TitanUtilityAbility_replenished_1P" ) //play a sound for now
+                    //cooldown
+                    for (int i = 3;i>0;i--)
+                    {
+                        NSEditStatusMessageOnPlayer( expect entity (this.reaper.GetOwner()),"Launch:   Cooldown ["+ string(i)+"]","","ID_REAPERLAUNCH")
+                        wait 1
+                    }
+                    NSEditStatusMessageOnPlayer( expect entity (this.reaper.GetOwner()),"Launch:   Ready","","ID_REAPERLAUNCH")
+                    EmitSoundOnEntityOnlyToPlayer( expect entity (this.reaper.GetOwner()) ,expect entity (this.reaper.GetOwner()), "HUD_TitanUtilityAbility_replenished_1P" )
                     this.launchoncooldown = false
 
                 } else {
@@ -906,6 +940,9 @@ void function OnPilotRespawned_Fallback( entity player)
         player.kv.VisibilityFlags = ENTITY_VISIBLE_TO_EVERYONE
         player.SetTitanEmbarkEnabled( true )
         player.ctrlreaper = null
+        NSDeleteStatusMessageOnPlayer( player, "ID_REAPERLAUNCH" )
+        NSDeleteStatusMessageOnPlayer( player, "ID_REAPERDASH" )
+        NSDeleteStatusMessageOnPlayer( player, "ID_REAPERSHOOT" )
     } catch(ex) {print(ex)}
 
 }

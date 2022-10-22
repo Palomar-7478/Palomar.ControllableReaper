@@ -61,14 +61,14 @@ void function CheckForCombination(entity player) {
 			EmitSoundOnEntityOnlyToPlayer( player,player, "titan_eject_dpad" )
 			if (player.EquipedReaperAsTitan) {
 				//Chat_ServerPrivateMessage(player,"\x1b[33mYour next Titanfall will be a: \x1b[31mReaper !\x1b[0m", false)
-				NSSendLargeMessageToPlayer( player,"Reaper Selected", "",1.8, "rui/callsigns/callsign_43_col")
+				NSSendLargeMessageToPlayer( player,"Reaper Selected", "for your next Titanfall",1.5, "rui/callsigns/callsign_43_col")
 			} else {
 				//Chat_ServerPrivateMessage(player,"\x1b[33mYour next Titanfall will be a: \x1b[31mTitan !\x1b[0m", false)
 				string titanclass = GetTitanLoadoutForPlayer( player ).titanClass
 				if (titanclass == "vanguard") {titanclass = "monarch"} //i hate how they call this titan like 3 different things ffs
-				NSSendLargeMessageToPlayer( player,"Titan Selected", "",1.8, "rui/callsigns/callsign_fd_"+ titanclass +"_master")
+				NSSendLargeMessageToPlayer( player,"Titan Selected", "for your next Titanfall",1.5, "rui/callsigns/callsign_fd_"+ titanclass +"_master")
 			}
-			wait 1.8
+			wait 1.5
 			player.ToggleOnCooldown = false
 		}
 	}
