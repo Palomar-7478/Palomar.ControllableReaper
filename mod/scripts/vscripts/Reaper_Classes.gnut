@@ -22,6 +22,7 @@ void function ReaperClassesInit(){
     CPlayer.ctrlreaper <- null //add a property to base player entity
     CPlayer.backeduptitancharge <- null
 
+
     class CtrlReaper {
         //changing values
         reaper = null //entity            |stores the reaper prop

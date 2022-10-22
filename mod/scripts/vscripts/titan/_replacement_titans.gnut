@@ -88,6 +88,8 @@ function ReplacementTitans_Init()
 		file.RequestTitanGamemodeRules = RequestTitanGamemodeRules_Default
 
 	FlagInit( "LevelHasRoof" )
+
+    CPlayer.HotDropOnCooldown <- false //mainly used to prevent info messsages from stacking
 }
 
 
@@ -689,242 +691,248 @@ bool function IsReplacementDropInProgress( entity player )
 /////////////////////////////////////////////////////////////////changed-things///////////////////////////////////////////////////////////////////////////////////////////////////
 void function CreateTitanForPlayerAndHotdrop( entity player, Point spawnPoint, TitanLoadoutDef ornull overrideLoadout = null )
 {
+	if (player.HotDropOnCooldown == false ) {
+		if (player.EquipedReaperAsTitan == true) {
+			player.HotDropOnCooldown = true
+			vector droppos = GetViewTrace( player ).endPos
 
-	if (player.EquipedReaperAsTitan == true) {
+			if (VectorDistanceBelowLimit(player.GetOrigin(),droppos,1000) && !EntInSolid(null,droppos + <0,0,50>)) {
+				if (!LocationIsUnderRoof(droppos , 10 , ROOFCHECKHEIGHT)) {
 
-		vector droppos = GetViewTrace( player ).endPos
+					//earn meter management
+					float oldRewardFrac = PlayerEarnMeter_GetRewardFrac( player )
 
-		if (VectorDistanceBelowLimit(player.GetOrigin(),droppos,1000) && !EntInSolid(null,droppos + <0,0,50>)) {
-			if (!LocationIsUnderRoof(droppos , 10 , ROOFCHECKHEIGHT)) {
+					PlayerEarnMeter_Reset( player )
+					ClearTitanAvailable( player )
 
-				//earn meter management
-				float oldRewardFrac = PlayerEarnMeter_GetRewardFrac( player )
+					if (oldRewardFrac != 0){ //its 0 if there was no boost equiped i think
+						PlayerEarnMeter_SetRewardFrac( player, oldRewardFrac ) //set reward to right position
+						PlayerEarnMeter_EnableReward( player ) //enable reward
+					}
 
-				PlayerEarnMeter_Reset( player )
-				ClearTitanAvailable( player )
 
-				if (oldRewardFrac != 0){ //its 0 if there was no boost equiped i think
-					PlayerEarnMeter_SetRewardFrac( player, oldRewardFrac ) //set reward to right position
-					PlayerEarnMeter_EnableReward( player ) //enable reward
+					//indicator & sound
+					EmitSoundAtPosition(TEAM_UNASSIGNED,droppos, "titan_hot_drop_turbo_begin" )
+					Remote_CallFunction_Replay( player, "ServerCallback_ReplacementTitanSpawnpoint", droppos.x, droppos.y, droppos.z, Time() + 5)
+					wait 3
+					EmitSoundAtPosition(TEAM_UNASSIGNED,droppos, "titan_drop_pod_turbo_landing" )
+					wait 0.9
+
+					//spawn reaper
+					var veryepicreaper = CtrlReaper(droppos,player.GetAngles()) //create reaper after 3.9 secs , because the warp in animation takes 1.1 secs
+					//player.EquipedReaperAsTitan = false maybe wanna auto toggle after calling in a reaper
+
+				}else {
+					//Chat_ServerPrivateMessage(player,"\x1b[33mCan't call in Reaper. A roof is in the way!\x1b[0m", false)
+					NSSendInfoMessageToPlayer( player, "Can't call in Reaper. A roof is in the way!" )
 				}
 
-
-				//indicator & sound
-				EmitSoundAtPosition(TEAM_UNASSIGNED,droppos, "titan_hot_drop_turbo_begin" )
-				Remote_CallFunction_Replay( player, "ServerCallback_ReplacementTitanSpawnpoint", droppos.x, droppos.y, droppos.z, Time() + 5)
-				wait 3
-				EmitSoundAtPosition(TEAM_UNASSIGNED,droppos, "titan_drop_pod_turbo_landing" )
-				wait 0.9
-
-				//spawn reaper
-				var veryepicreaper = CtrlReaper(droppos,player.GetAngles()) //create reaper after 3.9 secs , because the warp in animation takes 1.1 secs
-				//player.EquipedReaperAsTitan = false maybe wanna auto toggle after calling in a reaper
-
-			}else {
-				Chat_ServerPrivateMessage(player,"\x1b[33mCan't call in Reaper. A roof is in the way!\x1b[0m", false)
+			} else {
+				//Chat_ServerPrivateMessage(player,"\x1b[33mNot a suitable location to call in your Reaper!\x1b[0m", false)
+				NSSendInfoMessageToPlayer( player, "Not a suitable location to call in your Reaper!" )
 			}
 
-		} else {
-			Chat_ServerPrivateMessage(player,"\x1b[33mNot a suitable location to call in your Reaper!\x1b[0m", false)
+			wait 7//bout the lenght of sendinfomessage
+			player.HotDropOnCooldown = false
+
 		}
+		else { //this is just the original stuff that was here
 
-	}
-	else { //this is just the original that was here
+			Assert( IsValid( player ) )
 
-		Assert( IsValid( player ) )
-
-		if ( player.isSpawning )
-		{
-			printt( "CreateTitanForPlayerAndHotdrop", player, player.entindex(), "failed", "player.isSpawning was true" )
-			return
-		}
-
-		if ( player.s.replacementDropInProgress )
-		{
-			printt( "CreateTitanForPlayerAndHotdrop", player, player.entindex(), "failed", "player.s.replacementDropInProgress was true" )
-			return
-		}
-
-		player.s.replacementDropInProgress = true
-
-		entity titanFallDisablingEntity = CreateInfoTarget()
-
-		OnThreadEnd(
-			function() : ( player, titanFallDisablingEntity )
+			if ( player.isSpawning )
 			{
-				if ( IsValid( titanFallDisablingEntity ) ) //As a fail safe. Should have been cleaned up in OnThreadEnd of CleanupTitanFallDisablingEntity
-					titanFallDisablingEntity.Destroy()
-
-				if ( !IsValid( player ) )
-					return
-
-				player.s.replacementDropInProgress = false
-				player.ClearHotDropImpactTime()
+				printt( "CreateTitanForPlayerAndHotdrop", player, player.entindex(), "failed", "player.isSpawning was true" )
+				return
 			}
-		)
 
-		player.EndSignal( "OnDestroy" )
+			if ( player.s.replacementDropInProgress )
+			{
+				printt( "CreateTitanForPlayerAndHotdrop", player, player.entindex(), "failed", "player.s.replacementDropInProgress was true" )
+				return
+			}
 
-		if ( GAMETYPE != SST )
-		{
-			#if FACTION_DIALOGUE_ENABLED
-				PlayFactionDialogueToPlayer( "mp_titanInbound" , player )
-			#else
-				if ( player.titansBuilt )
-					PlayConversationToPlayer( "TitanReplacement", player )
-				else
-					PlayConversationToPlayer( "FirstTitanInbound", player )
-			#endif
-		}
+			player.s.replacementDropInProgress = true
 
-		vector origin = spawnPoint.origin
-		vector angles
-		if ( spawnPoint.angles != < 0.0, 0.0, 0.0 > )
-			angles = spawnPoint.angles
-		else
-			angles = VectorToAngles( FlattenVector( player.GetViewVector() ) * -1 )	// face the player
+			entity titanFallDisablingEntity = CreateInfoTarget()
 
-		printt( "Dropping replacement titan at " + origin + " with angles " + angles )
+			OnThreadEnd(
+				function() : ( player, titanFallDisablingEntity )
+				{
+					if ( IsValid( titanFallDisablingEntity ) ) //As a fail safe. Should have been cleaned up in OnThreadEnd of CleanupTitanFallDisablingEntity
+						titanFallDisablingEntity.Destroy()
 
-		#if HAS_STATS
-		UpdatePlayerStat( player, "misc_stats", "titanFalls" )
-		#endif
-		#if SERVER && MP
-			PIN_AddToPlayerCountStat( player, "titanfalls" )
-		#endif
+					if ( !IsValid( player ) )
+						return
 
-		if ( !level.firstTitanfall )
-		{
-			AddPlayerScore( player, "FirstTitanfall", player )
+					player.s.replacementDropInProgress = false
+					player.ClearHotDropImpactTime()
+				}
+			)
+
+			player.EndSignal( "OnDestroy" )
+
+			if ( GAMETYPE != SST )
+			{
+				#if FACTION_DIALOGUE_ENABLED
+					PlayFactionDialogueToPlayer( "mp_titanInbound" , player )
+				#else
+					if ( player.titansBuilt )
+						PlayConversationToPlayer( "TitanReplacement", player )
+					else
+						PlayConversationToPlayer( "FirstTitanInbound", player )
+				#endif
+			}
+
+			vector origin = spawnPoint.origin
+			vector angles
+			if ( spawnPoint.angles != < 0.0, 0.0, 0.0 > )
+				angles = spawnPoint.angles
+			else
+				angles = VectorToAngles( FlattenVector( player.GetViewVector() ) * -1 )	// face the player
+
+			printt( "Dropping replacement titan at " + origin + " with angles " + angles )
 
 			#if HAS_STATS
-			UpdatePlayerStat( player, "misc_stats", "titanFallsFirst" )
+			UpdatePlayerStat( player, "misc_stats", "titanFalls" )
+			#endif
+			#if SERVER && MP
+				PIN_AddToPlayerCountStat( player, "titanfalls" )
 			#endif
 
-			level.firstTitanfall = true
-		}
-		else
-		{
-			AddPlayerScore( player, "Titanfall", player )
-		}
-
-
-		player.Signal( "CalledInReplacementTitan" )
-
-		int playerTeam = player.GetTeam()
-
-		TryAnnounceTitanfallWarningToEnemyTeam( playerTeam, origin )
-
-		titanFallDisablingEntity.SetOrigin( origin )
-		DisableTitanfallForLifetimeOfEntityNearOrigin( titanFallDisablingEntity, origin, TITANHOTDROP_DISABLE_ENEMY_TITANFALL_RADIUS )
-
-		entity titan
-		string animation
-
-		string regularTitanfallAnim = "at_hotdrop_drop_2knee_turbo"
-
-		TitanLoadoutDef loadout
-		if ( overrideLoadout == null )
-		{
-			loadout = GetTitanLoadoutForPlayer( player )
-		}
-		else
-		{
-			loadout = expect TitanLoadoutDef( overrideLoadout )
-		}
-		bool hasWarpfall = loadout.passive3 == "pas_warpfall"
-		if ( hasWarpfall || Flag( "LevelHasRoof" ) )
-		{
-			ClearTitanAvailable( player ) //Normally this is done when the Titan is spawned, but for warpfall the Titan isn't spawned instaneously after requesting it.
-
-			file.warpFallDebounce[ player ] <- Time()
-			animation = "at_hotdrop_drop_2knee_turbo_upgraded"
-			string settings = loadout.setFile
-			asset model = GetPlayerSettingsAssetForClassName( settings, "bodymodel" )
-			Attachment warpAttach = GetAttachmentAtTimeFromModel( model, animation, "offset", origin, angles, 0 )
-
-			entity fakeTitan = CreatePropDynamic( model )
-			float impactTime = GetHotDropImpactTime( fakeTitan, animation )
-
-			float diff = 0.0
-
-			if ( !hasWarpfall ) // this means the level requested the warpfall
+			if ( !level.firstTitanfall )
 			{
-				float regularImpactTime = GetHotDropImpactTime( fakeTitan, regularTitanfallAnim ) - (WARPFALL_SOUND_DELAY + WARPFALL_FX_DELAY)
-				diff = ( regularImpactTime - impactTime )
-				impactTime = regularImpactTime
+				AddPlayerScore( player, "FirstTitanfall", player )
+
+				#if HAS_STATS
+				UpdatePlayerStat( player, "misc_stats", "titanFallsFirst" )
+				#endif
+
+				level.firstTitanfall = true
+			}
+			else
+			{
+				AddPlayerScore( player, "Titanfall", player )
 			}
 
-			fakeTitan.Kill_Deprecated_UseDestroyInstead()
 
-			local impactStartTime = Time()
-			impactTime += (WARPFALL_SOUND_DELAY + WARPFALL_FX_DELAY)
-			player.SetHotDropImpactDelay( impactTime )
-			Remote_CallFunction_Replay( player, "ServerCallback_ReplacementTitanSpawnpoint", origin.x, origin.y, origin.z, Time() + impactTime )
+			player.Signal( "CalledInReplacementTitan" )
 
-			EmitDifferentSoundsAtPositionForPlayerAndWorld( "Titan_1P_Warpfall_CallIn", "Titan_3P_Warpfall_CallIn", origin, player, playerTeam )
+			int playerTeam = player.GetTeam()
 
-			wait diff
+			TryAnnounceTitanfallWarningToEnemyTeam( playerTeam, origin )
 
-			wait WARPFALL_SOUND_DELAY
+			titanFallDisablingEntity.SetOrigin( origin )
+			DisableTitanfallForLifetimeOfEntityNearOrigin( titanFallDisablingEntity, origin, TITANHOTDROP_DISABLE_ENEMY_TITANFALL_RADIUS )
 
-			//	"Titan_1P_Warpfall_Start" 			- for first person warp calls, starting right on the button press
-			//	"Titan_3P_Warpfall_Start"  			- for any 3P other player or NPC when they call in a warp, starting right on their button press
-			EmitSoundAtPositionOnlyToPlayer( playerTeam, origin, player, "Titan_1P_Warpfall_Start" )
-			EmitSoundAtPositionExceptToPlayer( playerTeam, origin, player, "Titan_3P_Warpfall_Start" )
+			entity titan
+			string animation
 
-			PlayFX( TURBO_WARP_FX, warpAttach.position + Vector(0,0,-104), warpAttach.angle )
+			string regularTitanfallAnim = "at_hotdrop_drop_2knee_turbo"
 
-			wait WARPFALL_FX_DELAY
+			TitanLoadoutDef loadout
+			if ( overrideLoadout == null )
+			{
+				loadout = GetTitanLoadoutForPlayer( player )
+			}
+			else
+			{
+				loadout = expect TitanLoadoutDef( overrideLoadout )
+			}
+			bool hasWarpfall = loadout.passive3 == "pas_warpfall"
+			if ( hasWarpfall || Flag( "LevelHasRoof" ) )
+			{
+				ClearTitanAvailable( player ) //Normally this is done when the Titan is spawned, but for warpfall the Titan isn't spawned instaneously after requesting it.
 
-			titan = CreateAutoTitanForPlayer_FromTitanLoadout( player, loadout, origin, angles )
-			DispatchSpawn( titan )
-			thread PlayFXOnEntity( TURBO_WARP_COMPANY, titan, "offset" )
-		}
-		else
-		{
-			animation = regularTitanfallAnim
+				file.warpFallDebounce[ player ] <- Time()
+				animation = "at_hotdrop_drop_2knee_turbo_upgraded"
+				string settings = loadout.setFile
+				asset model = GetPlayerSettingsAssetForClassName( settings, "bodymodel" )
+				Attachment warpAttach = GetAttachmentAtTimeFromModel( model, animation, "offset", origin, angles, 0 )
 
-			titan = CreateAutoTitanForPlayer_FromTitanLoadout( player, loadout, origin, angles )
-			DispatchSpawn( titan )
+				entity fakeTitan = CreatePropDynamic( model )
+				float impactTime = GetHotDropImpactTime( fakeTitan, animation )
 
-			float impactTime = GetHotDropImpactTime( titan, animation )
-			player.SetHotDropImpactDelay( impactTime )
-			Remote_CallFunction_Replay( player, "ServerCallback_ReplacementTitanSpawnpoint", origin.x, origin.y, origin.z, Time() + impactTime )
-		}
+				float diff = 0.0
 
-		SetActiveTitanLoadoutIndex( player, GetPersistentSpawnLoadoutIndex( player, "titan" ) )
-		#if MP
-		SetActiveTitanLoadout( player )
+				if ( !hasWarpfall ) // this means the level requested the warpfall
+				{
+					float regularImpactTime = GetHotDropImpactTime( fakeTitan, regularTitanfallAnim ) - (WARPFALL_SOUND_DELAY + WARPFALL_FX_DELAY)
+					diff = ( regularImpactTime - impactTime )
+					impactTime = regularImpactTime
+				}
+
+				fakeTitan.Kill_Deprecated_UseDestroyInstead()
+
+				local impactStartTime = Time()
+				impactTime += (WARPFALL_SOUND_DELAY + WARPFALL_FX_DELAY)
+				player.SetHotDropImpactDelay( impactTime )
+				Remote_CallFunction_Replay( player, "ServerCallback_ReplacementTitanSpawnpoint", origin.x, origin.y, origin.z, Time() + impactTime )
+
+				EmitDifferentSoundsAtPositionForPlayerAndWorld( "Titan_1P_Warpfall_CallIn", "Titan_3P_Warpfall_CallIn", origin, player, playerTeam )
+
+				wait diff
+
+				wait WARPFALL_SOUND_DELAY
+
+				//	"Titan_1P_Warpfall_Start" 			- for first person warp calls, starting right on the button press
+				//	"Titan_3P_Warpfall_Start"  			- for any 3P other player or NPC when they call in a warp, starting right on their button press
+				EmitSoundAtPositionOnlyToPlayer( playerTeam, origin, player, "Titan_1P_Warpfall_Start" )
+				EmitSoundAtPositionExceptToPlayer( playerTeam, origin, player, "Titan_3P_Warpfall_Start" )
+
+				PlayFX( TURBO_WARP_FX, warpAttach.position + Vector(0,0,-104), warpAttach.angle )
+
+				wait WARPFALL_FX_DELAY
+
+				titan = CreateAutoTitanForPlayer_FromTitanLoadout( player, loadout, origin, angles )
+				DispatchSpawn( titan )
+				thread PlayFXOnEntity( TURBO_WARP_COMPANY, titan, "offset" )
+			}
+			else
+			{
+				animation = regularTitanfallAnim
+
+				titan = CreateAutoTitanForPlayer_FromTitanLoadout( player, loadout, origin, angles )
+				DispatchSpawn( titan )
+
+				float impactTime = GetHotDropImpactTime( titan, animation )
+				player.SetHotDropImpactDelay( impactTime )
+				Remote_CallFunction_Replay( player, "ServerCallback_ReplacementTitanSpawnpoint", origin.x, origin.y, origin.z, Time() + impactTime )
+			}
+
+			SetActiveTitanLoadoutIndex( player, GetPersistentSpawnLoadoutIndex( player, "titan" ) )
+			#if MP
+			SetActiveTitanLoadout( player )
+			#endif
+			if ( player in file.warpFallDebounce )
+				delete file.warpFallDebounce[ player ]
+
+			titan.EndSignal( "OnDeath" )
+			Assert( IsAlive( titan ) )
+
+			// dont let AI titan get enemies while dropping. Don't do trigger checks
+			titan.SetEfficientMode( true )
+			titan.SetTouchTriggers( false )
+			titan.SetNoTarget( true )
+			titan.SetAimAssistAllowed( false )
+
+		#if R1_VGUI_MINIMAP
+			thread PingMinimapDuringHotdrop( player, titan, origin )
 		#endif
-		if ( player in file.warpFallDebounce )
-			delete file.warpFallDebounce[ player ]
 
-		titan.EndSignal( "OnDeath" )
-		Assert( IsAlive( titan ) )
+			thread CleanupTitanFallDisablingEntity( titanFallDisablingEntity, titan ) //needs to be here after titan is created
+			waitthread PlayersTitanHotdrops( titan, origin, angles, player, animation ) //Note that this function returns after the titan has played the landing anim, not when the titan hits the ground
 
-		// dont let AI titan get enemies while dropping. Don't do trigger checks
-		titan.SetEfficientMode( true )
-		titan.SetTouchTriggers( false )
-		titan.SetNoTarget( true )
-		titan.SetAimAssistAllowed( false )
+			titan.SetEfficientMode( false )
+			titan.SetTouchTriggers( true )
+			titan.SetAimAssistAllowed( true )
 
-	#if R1_VGUI_MINIMAP
-		thread PingMinimapDuringHotdrop( player, titan, origin )
-	#endif
+			player.Signal( "titan_impact" )
 
-		thread CleanupTitanFallDisablingEntity( titanFallDisablingEntity, titan ) //needs to be here after titan is created
-		waitthread PlayersTitanHotdrops( titan, origin, angles, player, animation ) //Note that this function returns after the titan has played the landing anim, not when the titan hits the ground
-
-		titan.SetEfficientMode( false )
-		titan.SetTouchTriggers( true )
-		titan.SetAimAssistAllowed( true )
-
-		player.Signal( "titan_impact" )
-
-		thread TitanNPC_WaitForBubbleShield_StartAutoTitanBehavior( titan )
+			thread TitanNPC_WaitForBubbleShield_StartAutoTitanBehavior( titan )
 		}
 	}
+}
 
 void function CleanupTitanFallDisablingEntity( entity titanFallDisablingEntity, entity titan )
 {
