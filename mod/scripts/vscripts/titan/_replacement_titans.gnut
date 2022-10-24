@@ -732,7 +732,7 @@ void function CreateTitanForPlayerAndHotdrop( entity player, Point spawnPoint, T
 				NSSendInfoMessageToPlayer( player, "Not a suitable location to call in your Reaper!" )
 			}
 
-			wait 7//bout the lenght of sendinfomessage
+			wait 4//bout the lenght of sendinfomessage
 			player.HotDropOnCooldown = false
 
 		}
