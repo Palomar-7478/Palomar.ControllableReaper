@@ -446,10 +446,29 @@ void function ReaperClassesInit(){
                     this.dashing = false
 
                     //cooldown
-                    for (int i = 3;i>0;i--){
-                        NSEditStatusMessageOnPlayer( expect entity (this.reaper.GetOwner()),"Dash:   Cooldown ["+ string(i)+"]","","ID_REAPERDASH")
-                        wait 0.5
+                    float secs = 1.5
+                    int barmaxlength = 42
+
+                    for (int i = int(secs * 10);i>0;i--) //run this loop every 10th of a second
+                    {
+                        string bar = ""
+                        float percentpassed = (float(i)/10) / secs
+                        int barcount = int(percentpassed*barmaxlength)
+
+                        for (int c = 0;c < barcount;c++) {
+                            bar = bar + "|"
+                        }
+
+                        NSEditStatusMessageOnPlayer( expect entity (this.reaper.GetOwner()),"Dash:   "+ bar,"","ID_REAPERDASH")
+                        wait 0.1
                     }
+
+                    //cooldown
+                    //for (int i = 3;i>0;i--){
+                    //   NSEditStatusMessageOnPlayer( expect entity (this.reaper.GetOwner()),"Dash:   Cooldown ["+ string(i)+"]","","ID_REAPERDASH")
+                    //    wait 0.5
+                    //}
+
                     if (IsValid (this.reaper.GetOwner())) {
                         NSEditStatusMessageOnPlayer( expect entity (this.reaper.GetOwner()),"Dash:   Ready","","ID_REAPERDASH")
                         EmitSoundOnEntityOnlyToPlayer( expect entity (this.reaper.GetOwner()) ,expect entity (this.reaper.GetOwner()), "HUD_TitanUtilityAbility_replenished_1P" )
@@ -560,11 +579,32 @@ void function ReaperClassesInit(){
                 }
             }catch(ex) {print(ex)}
 
+
             //cooldown
-            for (int i = 3;i>0;i--){
-                NSEditStatusMessageOnPlayer( expect entity (this.reaper.GetOwner()),"Weapon System:   Cooldown ["+ string(i)+"]","","ID_REAPERSHOOT")
-                wait 0.25
+            float secs = 0.75
+            int barmaxlength = 33
+
+            for (int i = int(secs * 10);i>0;i--) //run this loop every 10th of a second
+            {
+                string bar = ""
+                float percentpassed = (float(i)/10) / secs
+                int barcount = int(percentpassed*barmaxlength)
+
+                for (int c = 0;c < barcount;c++) {
+                    bar = bar + "|"
+                }
+
+                NSEditStatusMessageOnPlayer( expect entity (this.reaper.GetOwner()),"Weapon System:   "+ bar,"","ID_REAPERSHOOT")
+                wait 0.1
             }
+
+
+
+            //for (int i = 3;i>0;i--){
+            //    NSEditStatusMessageOnPlayer( expect entity (this.reaper.GetOwner()),"Weapon System:   Cooldown ["+ string(i)+"]","","ID_REAPERSHOOT")
+            //    wait 0.25
+            //}
+
             if (IsValid (this.reaper.GetOwner())) {
                 NSEditStatusMessageOnPlayer( expect entity (this.reaper.GetOwner()),"Weapon System:   Ready","","ID_REAPERSHOOT")
                 EmitSoundOnEntityOnlyToPlayer( expect entity (this.reaper.GetOwner()) ,expect entity (this.reaper.GetOwner()), "HUD_TitanUtilityAbility_replenished_1P" )
@@ -665,10 +705,21 @@ void function ReaperClassesInit(){
                     this.reaperinlaunch = false
 
                     //cooldown
-                    for (int i = 3;i>0;i--)
+                    int secs = 3
+                    int barmaxlength = 40
+
+                    for (int i = secs * 10;i>0;i--) //run this loop every 10th of a second
                     {
-                        NSEditStatusMessageOnPlayer( expect entity (this.reaper.GetOwner()),"Launch:   Cooldown ["+ string(i)+"]","","ID_REAPERLAUNCH")
-                        wait 1
+                        string bar = ""
+                        float percentpassed = (float(i)/10) / secs
+                        int barcount = int(percentpassed*barmaxlength)
+
+                        for (int c = 0;c < barcount;c++) {
+                            bar = bar + "|"
+                        }
+
+                        NSEditStatusMessageOnPlayer( expect entity (this.reaper.GetOwner()),"Launch:   "+ bar,"","ID_REAPERLAUNCH")
+                        wait 0.1
                     }
 
                     if (IsValid (this.reaper.GetOwner())) {
@@ -1048,10 +1099,14 @@ vector function FindNearestSafeExitPos(entity player, vector targetPos, int seve
 
 //todo:
 //make projectiles respect teams (splash damage already does)
+
 //add ui (particularly for launching cooldown & health) , maybe with 1.10 server side rui
+//! potentially move away from pseudo titan thing and add hitmarkers like in my spaceship mod & add a health statusmsg
+
 //finish jumping ( make jumping have a circular shape (presti on discord sent me the formula)
 //fix launch impact damage , kinda unrelyable atm (maybe use FindVisibleEntitiesInCone with a cone that looks down) //not sure , not a high priority
 
+//make universal cooldown statusmsg updater , instead of having 3 seperate ones for each action
 
 
 
