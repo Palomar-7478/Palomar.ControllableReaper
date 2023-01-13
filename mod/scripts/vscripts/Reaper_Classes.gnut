@@ -1,7 +1,7 @@
-untyped
-
-global var CtrlReaper
-
+{
+    "security.workspace.trust.untrustedFiles": "open",
+    "git.confirmSync": false
+}
 global function ReaperClassesInit
 
 global function VectorDistanceBelowLimit
