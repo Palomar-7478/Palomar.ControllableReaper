@@ -1,7 +1,7 @@
 {
    "Name": "Controllable Reapers",
    "Description": "Become the most annoying thing on the frontier!",
-    "Version": "1.4",
+    "Version": "1.5(Dev)",
    "LoadPriority": 2,
    "ConVars": [],
    "Scripts": [
