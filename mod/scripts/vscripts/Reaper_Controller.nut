@@ -10,7 +10,7 @@ void function Reaper_Controller_Init () {
 
     //AddClientCommandCallback( "spawnreaper", spawnfunc )
 	//AddClientCommandCallback( "test", testfunc )
-	AddClientCommandCallback( "dummy", spawndummyfunc )
+	//AddClientCommandCallback( "dummy", spawndummyfunc )
 }
 
 void function AddSelectInputs(entity player) { //combination is kinda weird

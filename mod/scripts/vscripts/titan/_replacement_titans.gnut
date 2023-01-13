@@ -33,9 +33,12 @@ global function SetReplacementTitanGamemodeRules
 global function SetRequestTitanGamemodeRules
 
 global function CreateTitanForPlayerAndHotdrop
+global function SetRequestTitanAllowedCallback
+
 
 //added things here
 const ROOFCHECKHEIGHT = 1000
+//
 
 struct {
 	array<int> ETATimeThresholds = [ 120, 60, 30, 15 ]
@@ -697,6 +700,9 @@ bool function IsReplacementDropInProgress( entity player )
 	return expect bool( player.s.replacementDropInProgress )
 }
 
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////changed-things///////////////////////////////////////////////////////////////////////////////////////////////////
 void function CreateTitanForPlayerAndHotdrop( entity player, Point spawnPoint, TitanLoadoutDef ornull overrideLoadout = null )
 {
